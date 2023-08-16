@@ -32,3 +32,27 @@ forBlock['add_text'] = function (block, generator) {
   const code = `${addText}(${text}, ${color});\n`;
   return code;
 };
+
+forBlock['add_led'] = function (block, generator) {
+  const color =
+    generator.valueToCode(block, 'COLOR', Order.ATOMIC) || "'#ffffff'";
+
+  const addLed = generator.provideFunction_(
+      'addLed',
+      `function ${generator.FUNCTION_NAME_PLACEHOLDER_}(color) {
+
+  // Add color div to the output area.
+  const outputDiv = document.getElementById('output');
+  const textEl = document.createElement('div');
+  textEl.style.backgroundColor = color;
+  textEl.style.padding = '20px';
+  textEl.style.margin = '5px';
+  textEl.style.width = '10px';
+  textEl.style.display = 'inline-block';
+  outputDiv.appendChild(textEl);
+}`
+  );
+  // Generate the function call for this block.
+  const code = `${addLed}(${color});\n`;
+  return code;
+};

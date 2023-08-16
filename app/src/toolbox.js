@@ -505,7 +505,7 @@ export const toolbox = {
               },
             },
           },
-        },        
+        },
         {
           'kind': 'block',
           'type': 'add_text',
@@ -527,7 +527,7 @@ export const toolbox = {
               },
             },
           },
-        },
+        },               
       ],
     },
     {
@@ -638,6 +638,20 @@ export const toolbox = {
       'name': 'Color',
       'categorystyle': 'colour_category',
       'contents': [
+        {
+          'kind': 'block',
+          'type': 'add_led',
+          'inputs': {
+            'COLOR': {
+              'shadow': {
+                'type': 'colour_picker',
+                'fields': {
+                  'COLOUR': '#aa00cc',
+                },
+              },
+            },
+          },
+        },
         {
           'kind': 'block',
           'type': 'colour_picker',

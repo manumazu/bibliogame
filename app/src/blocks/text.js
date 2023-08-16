@@ -32,8 +32,27 @@ const addText = {
   'helpUrl': '',
 };
 
+
+// Create a custom block called 'add_led' that adds
+// block color to the output div on the sample app.
+const addLed = {
+  'type': 'add_led',
+  'message0': 'Add block color %1',
+  'args0': [
+    {
+      'type': 'input_value',
+      'name': 'COLOR',
+      'check': 'Colour',
+    },
+  ],
+  'previousStatement': null,
+  'nextStatement': null,
+  'colour': 160,
+  'tooltip': '',
+  'helpUrl': '',
+};
+
 // Create the block definitions for the JSON-only blocks.
 // This does not register their definitions with Blockly.
 // This file has no side effects!
-export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
-    [addText]);
+export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([addText, addLed]);
