@@ -56,3 +56,22 @@ forBlock['add_led'] = function (block, generator) {
   const code = `${addLed}(${color});\n`;
   return code;
 };
+
+
+forBlock['change_strip'] = function (block, generator) {
+
+  const nextStripLed = generator.provideFunction_(
+      'nextStripLed',
+      `function ${generator.FUNCTION_NAME_PLACEHOLDER_}() {
+
+  // Add color div to the output area.
+  const outputDiv = document.getElementById('output');
+  const textEl = document.createElement('div');
+  textEl.style.display = 'block';
+  outputDiv.appendChild(textEl);
+}`
+  );
+  // Generate the function call for this block.
+  const code = `${nextStripLed}();\n`;
+  return code;
+};

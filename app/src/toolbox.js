@@ -654,6 +654,10 @@ export const toolbox = {
         },
         {
           'kind': 'block',
+          'type': 'change_strip',
+        },                
+        {
+          'kind': 'block',
           'type': 'colour_picker',
         },
         {
