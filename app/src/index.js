@@ -20,6 +20,7 @@ Object.assign(javascriptGenerator.forBlock, forBlock);
 const codeDiv = document.getElementById('generatedCode').firstChild;
 const outputDiv = document.getElementById('output');
 const runDiv = document.getElementById('runcode');
+const saveButton = document.getElementById('savecode');
 const blocklyDiv = document.getElementById('blocklyDiv');
 const ws = Blockly.inject(blocklyDiv, {toolbox});
 
@@ -45,10 +46,18 @@ const runCode = () => {
 };
 
 
+const saveCode = () => {
+    saveButton.addEventListener("click", function() {
+      console.log(outputDiv);
+  });
+};
+
+
 // Load the initial state from storage and run the code.
 load(ws);
 var newCode = showCode();
 runCode();
+saveCode();
 
 // Every time the workspace changes state, save the changes to storage.
 ws.addChangeListener((e) => {

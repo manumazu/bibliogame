@@ -556,7 +556,7 @@ export const toolbox = {
               },
             },
           },
-        },
+        },  
         {
           'kind': 'block',
           'type': 'lists_length',
@@ -652,6 +652,25 @@ export const toolbox = {
             },
           },
         },
+        {
+          'kind': 'block',
+          'type': 'add_led_strip',
+          'inputs': {
+            'COLOR': {
+              'shadow': {
+                'type': 'colour_picker',
+                'fields': {
+                  'COLOUR': '#aa00cc',
+                },
+              },
+              'STRIP_NAME': {
+                'block': {
+                  'type': 'variables_get',
+                },
+              }, 
+            },    
+          },
+        },        
         {
           'kind': 'block',
           'type': 'change_strip',

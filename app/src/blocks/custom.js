@@ -52,6 +52,32 @@ const addLed = {
   'helpUrl': '',
 };
 
+// Create a custom block called 'add_led' that adds
+// block color to the output div on the sample app.
+const addLedStrip = {
+  'type': 'add_led_strip',
+  'message0': 'Set LED color %1 for strip %2',
+  'args0': [
+    {
+      'type': 'input_value',
+      'name': 'COLOR',
+      'check': 'Colour',
+    },
+    {
+      'type': 'field_variable',
+      'name': 'STRIP_NAME',
+      //'variable': 'strip number'
+      'variable': '%{BKY_VARIABLES_DEFAULT_NAME}',  
+    },    
+  ],
+  'previousStatement': null,
+  'nextStatement': null,
+  'colour': 20,
+  'tooltip': '',
+  'helpUrl': '',
+};
+
+
 const nextStripLed = {
   'type': 'change_strip',
   'message0': 'Change strip LEDs',
@@ -62,7 +88,8 @@ const nextStripLed = {
   'helpUrl': '',
 };
 
+
 // Create the block definitions for the JSON-only blocks.
 // This does not register their definitions with Blockly.
 // This file has no side effects!
-export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([addText, addLed, nextStripLed]);
+export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([addText, addLed, addLedStrip, nextStripLed]);
