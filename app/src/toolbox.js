@@ -663,11 +663,11 @@ export const toolbox = {
                   'COLOUR': '#aa00cc',
                 },
               },
-              'STRIP_NAME': {
+              'LIST': {
                 'block': {
                   'type': 'variables_get',
                 },
-              }, 
+              },
             },    
           },
         },        
