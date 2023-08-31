@@ -58,7 +58,7 @@ forBlock['add_led'] = function (block, generator) {
 };
 
 forBlock['add_led_strip'] = function (block, generator) {
-  const strip_num = "'"+block.getFieldValue('STRIP_NAME')+"'"; 
+  const strip_num = "'"+block.inputList[1].fieldRow[1].selectedOption[0]+"'"; 
   //generator.valueToCode(block, 'STRIP_NAME', Order.MEMBER);
   console.log('input:',block.inputList[1].fieldRow[1].selectedOption[0]); 
   //const strip_num = block.getFieldValue('STRIP_NAME');
@@ -97,6 +97,7 @@ forBlock['change_strip'] = function (block, generator) {
   const outputDiv = document.getElementById('output');
   const textEl = document.createElement('div');
   textEl.style.display = 'block';
+  textEl.setAttribute('id', 'changeStrip');
   outputDiv.appendChild(textEl);
 }`
   );

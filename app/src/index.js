@@ -48,7 +48,23 @@ const runCode = () => {
 
 const saveCode = () => {
     saveButton.addEventListener("click", function() {
-      console.log(outputDiv);
+      if (outputDiv.hasChildNodes()) {
+        let children = outputDiv.childNodes;
+
+        //for (const [i, node] of children) {
+        let i = 0;
+        for (const node of children) {
+          if(node.id == 'changeStrip')
+            i = -1;
+          console.log(i, node);
+          i++;
+          // Do something with each child as children[i]
+          // NOTE: List is live! Adding or removing children will change the list's `length`
+        }
+      }
+      else {
+        alert("Press RUN button before saving something");
+      }
   });
 };
 

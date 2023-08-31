@@ -64,14 +64,15 @@ const addLedStrip = {
       'check': 'Colour',
     },
     {
-      'type': 'field_variable',
-      'name': 'STRIP_NAME',
-      /*'type': 'field_dropdown',
+      //'type': 'field_variable',
+      //'name': 'STRIP_NAME',
+      'type': 'field_dropdown',
       'name': 'STRIP_NAME',
       'options': [
         [ 'strip1', 'strip_1' ],
-        [ 'strip2', 'strip_2' ]
-      ]*/
+        [ 'strip2', 'strip_2' ],
+        [ 'strip3', 'strip_3' ]
+      ]
       //'variable': 'strip number'
       //'variable': '%{BKY_VARIABLES_DEFAULT_NAME}',  
     },
