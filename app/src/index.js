@@ -53,14 +53,45 @@ const saveCode = () => {
 
         //for (const [i, node] of children) {
         let i = 0;
+        const reqArray = [];
         for (const node of children) {
           if(node.id == 'changeStrip')
             i = -1;
-          console.log(i, node);
-          i++;
-          // Do something with each child as children[i]
-          // NOTE: List is live! Adding or removing children will change the list's `length`
+          else{
+            //console.log(i, node.id, node.style.backgroundColor);
+            //build json array for each led request
+            i++;
+            const row = node.id.split('_');
+            const colorStr = node.style.backgroundColor.substr(3);
+            var regExp = /\(([^)]+)\)/;
+            var color = regExp.exec(colorStr);
+            //console.log(color[1]);
+            const request = {'action':'add',
+                  'row':parseInt(row[1]), //strip_1
+                  'led_column':i, //index
+                  'interval':1,
+                  'id_tag':null,
+                  'color':color[1],
+                  'id_node':null,
+                  'client':'server'};
+            //console.log(request);
+            reqArray.push(request);
+          }
         }
+        console.log(reqArray);
+
+
+        /*fetch('https://reqbin.com/echo/post/json', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ "id": 78912 })
+        })
+           .then(response => response.json())
+           .then(response => console.log(JSON.stringify(response)))*/
+
       }
       else {
         alert("Press RUN button before saving something");
