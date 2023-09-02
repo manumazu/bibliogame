@@ -24,7 +24,34 @@ const saveButton = document.getElementById('savecode');
 const blocklyDiv = document.getElementById('blocklyDiv');
 const ws = Blockly.inject(blocklyDiv, {toolbox});
 
+const baseUrl = 'https://bibliobus.local/api';
+const uuid = 'YmlidXMtMDAwMy0wMzA0Nw==';
 
+//get auth from API
+const refreshToken = async (encodedId) => {
+    const url = baseUrl + '/module/' + encodedId + '/';
+    let response = await fetch(url);
+    let res = await response.json();
+    //console.log(res['token']);
+    return res['token'];
+};
+
+//send ligthing request to server, relayed through mobile App
+const setLedRequest = async(reqArray) => {
+  let token = await refreshToken(uuid);
+    console.log(token)
+     
+    fetch(baseUrl+'/request?token='+token+'&uuid='+uuid, {
+      method: 'POST',
+      headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(reqArray)
+    })
+   .then(response => response.json())
+   .then(response => console.log(JSON.stringify(response)));
+};
 
 // This function resets the code and output divs, shows the
 // generated code from the workspace, and evals the code.
@@ -47,8 +74,12 @@ const runCode = () => {
 
 
 const saveCode = () => {
+
+    // build ouptut array and send request to api
     saveButton.addEventListener("click", function() {
-      if (outputDiv.hasChildNodes()) {
+      
+      if (outputDiv.hasChildNodes()) 
+      {
         let children = outputDiv.childNodes;
 
         //for (const [i, node] of children) {
@@ -78,19 +109,10 @@ const saveCode = () => {
             reqArray.push(request);
           }
         }
-        console.log(reqArray);
+        //console.log(reqArray);
 
-
-        /*fetch('https://reqbin.com/echo/post/json', {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ "id": 78912 })
-        })
-           .then(response => response.json())
-           .then(response => console.log(JSON.stringify(response)))*/
+        //send request for ligthing leds
+        setLedRequest(reqArray);
 
       }
       else {
