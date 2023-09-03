@@ -25,7 +25,8 @@ const blocklyDiv = document.getElementById('blocklyDiv');
 const ws = Blockly.inject(blocklyDiv, {toolbox});
 
 const baseUrl = 'https://bibliobus.local/api';
-const uuid = 'YmlidXMtMDAwMy0wMzA0Nw==';
+//const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
+const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo 
 
 //get auth from API
 const refreshToken = async (encodedId) => {
@@ -39,7 +40,7 @@ const refreshToken = async (encodedId) => {
 //send ligthing request to server, relayed through mobile App
 const setLedRequest = async(reqArray) => {
   let token = await refreshToken(uuid);
-    console.log(token)
+    //console.log(token)
      
     fetch(baseUrl+'/request?token='+token+'&uuid='+uuid, {
       method: 'POST',
@@ -103,7 +104,7 @@ const saveCode = () => {
                   'interval':1,
                   'id_tag':null,
                   'color':color[1],
-                  'id_node':null,
+                  'id_node':0,
                   'client':'server'};
             //console.log(request);
             reqArray.push(request);
