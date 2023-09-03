@@ -21,10 +21,12 @@ const codeDiv = document.getElementById('generatedCode').firstChild;
 const outputDiv = document.getElementById('output');
 const runDiv = document.getElementById('runcode');
 const saveButton = document.getElementById('savecode');
+const resetButton = document.getElementById('reset');
 const blocklyDiv = document.getElementById('blocklyDiv');
 const ws = Blockly.inject(blocklyDiv, {toolbox});
 
 const baseUrl = 'https://bibliobus.local/api';
+//const baseUrl = 'https://bibliob.us/api';
 //const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
 const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo 
 
@@ -52,6 +54,16 @@ const setLedRequest = async(reqArray) => {
     })
    .then(response => response.json())
    .then(response => console.log(JSON.stringify(response)));
+};
+
+//send reset request to server to delete lighting requests, relayed through mobile App
+const resetAllRequest = async() => {
+  let token = await refreshToken(uuid);
+    fetch(baseUrl+'/reset?token='+token+'&uuid='+uuid)
+   .then(response => response.json())
+   .then(response => console.log(JSON.stringify(response)));
+
+   outputDiv.innerHTML = '';
 };
 
 // This function resets the code and output divs, shows the
@@ -122,12 +134,20 @@ const saveCode = () => {
   });
 };
 
+const resetRequest = () => {
+
+    // build ouptut array and send request to api
+    resetButton.addEventListener("click", function() {
+      resetAllRequest();
+    })
+}
 
 // Load the initial state from storage and run the code.
 load(ws);
 var newCode = showCode();
 runCode();
 saveCode();
+resetRequest();
 
 // Every time the workspace changes state, save the changes to storage.
 ws.addChangeListener((e) => {
