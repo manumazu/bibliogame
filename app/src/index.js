@@ -25,10 +25,10 @@ const resetButton = document.getElementById('reset');
 const blocklyDiv = document.getElementById('blocklyDiv');
 const ws = Blockly.inject(blocklyDiv, {toolbox});
 
-const baseUrl = 'https://bibliobus.local/api';
-//const baseUrl = 'https://bibliob.us/api';
-//const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
-const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo 
+//const baseUrl = 'https://bibliobus.local/api';
+const baseUrl = 'https://bibliob.us/api';
+const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
+//const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo 
 
 //get auth from API
 const refreshToken = async (encodedId) => {
@@ -40,7 +40,7 @@ const refreshToken = async (encodedId) => {
 };
 
 //send ligthing request to server, relayed through mobile App
-const setLedRequest = async(reqArray) => {
+const saveRequest = async(reqArray) => {
   let token = await refreshToken(uuid);
     //console.log(token)
      
@@ -53,15 +53,28 @@ const setLedRequest = async(reqArray) => {
       body: JSON.stringify(reqArray)
     })
    .then(response => response.json())
+   .then(response => console.log(JSON.stringify(response)))
+   //.then(getRequest())
+};
+
+//get pending requests from server (only for debug !)
+const getRequest = async() => {
+  let token = await refreshToken(uuid);
+    //console.log(token)
+     
+    fetch(baseUrl+'/request?token='+token+'&uuid='+uuid)
+   .then(response => response.json())
    .then(response => console.log(JSON.stringify(response)));
 };
+
 
 //send reset request to server to delete lighting requests, relayed through mobile App
 const resetAllRequest = async() => {
   let token = await refreshToken(uuid);
     fetch(baseUrl+'/reset?token='+token+'&uuid='+uuid)
    .then(response => response.json())
-   .then(response => console.log(JSON.stringify(response)));
+   .then(response => console.log(JSON.striwngify(response)))
+   //.then(getRequest())
 
    outputDiv.innerHTML = '';
 };
@@ -100,11 +113,10 @@ const saveCode = () => {
         const reqArray = [];
         for (const node of children) {
           if(node.id == 'changeStrip')
-            i = -1;
+            i = 0;
           else{
             //console.log(i, node.id, node.style.backgroundColor);
             //build json array for each led request
-            i++;
             const row = node.id.split('_');
             const colorStr = node.style.backgroundColor.substr(3);
             var regExp = /\(([^)]+)\)/;
@@ -118,14 +130,15 @@ const saveCode = () => {
                   'color':color[1],
                   'id_node':0,
                   'client':'server'};
-            //console.log(request);
+            i++;
+            console.log(request);
             reqArray.push(request);
           }
         }
         //console.log(reqArray);
 
         //send request for ligthing leds
-        setLedRequest(reqArray);
+        saveRequest(reqArray);
 
       }
       else {
