@@ -20,13 +20,13 @@ Object.assign(javascriptGenerator.forBlock, forBlock);
 const codeDiv = document.getElementById('generatedCode').firstChild;
 const outputDiv = document.getElementById('output');
 const runDiv = document.getElementById('runcode');
-const saveButton = document.getElementById('savecode');
+const sendButton = document.getElementById('sendcode');
 const resetButton = document.getElementById('reset');
 const blocklyDiv = document.getElementById('blocklyDiv');
 const ws = Blockly.inject(blocklyDiv, {toolbox});
 
-//const baseUrl = 'https://bibliobus.local/api';
-const baseUrl = 'https://bibliob.us/api';
+const baseUrl = 'https://bibliobus.local/api';
+//const baseUrl = 'https://bibliob.us/api';
 const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
 //const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo 
 
@@ -40,7 +40,7 @@ const refreshToken = async (encodedId) => {
 };
 
 //send ligthing request to server, relayed through mobile App
-const saveRequest = async(reqArray) => {
+const sendRequest = async(reqArray) => {
   let token = await refreshToken(uuid);
     //console.log(token)
      
@@ -70,8 +70,16 @@ const getRequest = async() => {
 
 //send reset request to server to delete lighting requests, relayed through mobile App
 const resetAllRequest = async() => {
-  let token = await refreshToken(uuid);
-    fetch(baseUrl+'/reset?token='+token+'&uuid='+uuid)
+    let token = await refreshToken(uuid);
+    const resetRequest = [{'action':'reset'}]
+    fetch(baseUrl+'/reset?token='+token+'&uuid='+uuid, {
+      method: 'POST',
+      headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(resetRequest)
+    })
    .then(response => response.json())
    .then(response => console.log(JSON.striwngify(response)))
    //.then(getRequest())
@@ -99,10 +107,10 @@ const runCode = () => {
 };
 
 
-const saveCode = () => {
+const sendCode = () => {
 
     // build ouptut array and send request to api
-    saveButton.addEventListener("click", function() {
+    sendButton.addEventListener("click", function() {
       
       if (outputDiv.hasChildNodes()) 
       {
@@ -138,7 +146,7 @@ const saveCode = () => {
         //console.log(reqArray);
 
         //send request for ligthing leds
-        saveRequest(reqArray);
+        sendRequest(reqArray);
 
       }
       else {
@@ -159,7 +167,7 @@ const resetRequest = () => {
 load(ws);
 var newCode = showCode();
 runCode();
-saveCode();
+sendCode();
 resetRequest();
 
 // Every time the workspace changes state, save the changes to storage.
