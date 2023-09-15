@@ -25,10 +25,10 @@ const resetButton = document.getElementById('reset');
 const blocklyDiv = document.getElementById('blocklyDiv');
 const ws = Blockly.inject(blocklyDiv, {toolbox});
 
-const baseUrl = 'https://bibliobus.local/api';
-//const baseUrl = 'https://bibliob.us/api';
-const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
-//const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo 
+//const baseUrl = 'https://bibliobus.local/api';
+const baseUrl = 'https://bibliob.us/api';
+//const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
+const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo 
 
 //get auth from API
 const refreshToken = async (encodedId) => {
@@ -54,25 +54,13 @@ const sendRequest = async(reqArray) => {
     })
    .then(response => response.json())
    .then(response => console.log(JSON.stringify(response)))
-   //.then(getRequest())
 };
-
-//get pending requests from server (only for debug !)
-const getRequest = async() => {
-  let token = await refreshToken(uuid);
-    //console.log(token)
-     
-    fetch(baseUrl+'/request?token='+token+'&uuid='+uuid)
-   .then(response => response.json())
-   .then(response => console.log(JSON.stringify(response)));
-};
-
 
 //send reset request to server to delete lighting requests, relayed through mobile App
 const resetAllRequest = async() => {
     let token = await refreshToken(uuid);
     const resetRequest = [{'action':'reset'}]
-    fetch(baseUrl+'/reset?token='+token+'&uuid='+uuid, {
+    fetch(baseUrl+'/reset-game?token='+token+'&uuid='+uuid, {
       method: 'POST',
       headers: {
           'Accept': 'application/json',
@@ -82,7 +70,6 @@ const resetAllRequest = async() => {
     })
    .then(response => response.json())
    .then(response => console.log(JSON.striwngify(response)))
-   //.then(getRequest())
 
    outputDiv.innerHTML = '';
 };
