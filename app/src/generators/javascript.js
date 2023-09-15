@@ -60,11 +60,11 @@ forBlock['add_led'] = function (block, generator) {
 forBlock['add_led_strip'] = function (block, generator) {
   const strip_num = "'"+block.inputList[1].fieldRow[1].selectedOption[1]+"'"; 
   //generator.valueToCode(block, 'STRIP_NAME', Order.MEMBER);
-  console.log('input:',block.inputList[1].fieldRow[1].selectedOption[0]); 
+  //console.log('input:',block.inputList[1].fieldRow[1].selectedOption[0]); 
   //const strip_num = block.getFieldValue('STRIP_NAME');
   const color =
     generator.valueToCode(block, 'COLOR', Order.MEMBER) || "'#ffffff'";
-  console.log('color',color);
+  //console.log('color',color);
 
   const addLedStrip = generator.provideFunction_(
       'addLedStrip',
@@ -103,5 +103,11 @@ forBlock['change_strip'] = function (block, generator) {
   );
   // Generate the function call for this block.
   const code = `${nextStripLed}();\n`;
+  return code;
+};
+
+forBlock['wait_seconds'] = function(block, generator) {
+  const seconds = Number(block.getFieldValue('SECONDS'));
+  const code = 'waitForSeconds(' + seconds + ');\n';
   return code;
 };

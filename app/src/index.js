@@ -12,6 +12,12 @@ import {save, load} from './serialization';
 import {toolbox} from './toolbox';
 import './index.css';
 
+let acorn = require('acorn');
+let Interpreter = require('./interpreter');
+Interpreter.nativeGlobal['acorn'] = acorn;
+
+//console.log(Interpreter.nativeGlobal['acorn'].parse("1 + 1", {ecmaVersion: 2020}));
+
 // Register the blocks and generator with Blockly
 Blockly.common.defineBlocks(blocks);
 Object.assign(javascriptGenerator.forBlock, forBlock);
@@ -19,16 +25,74 @@ Object.assign(javascriptGenerator.forBlock, forBlock);
 // Set up UI elements and inject Blockly
 const codeDiv = document.getElementById('generatedCode').firstChild;
 const outputDiv = document.getElementById('output');
-const runDiv = document.getElementById('runcode');
+const runButton = document.getElementById('runcode');
 const sendButton = document.getElementById('sendcode');
 const resetButton = document.getElementById('reset');
 const blocklyDiv = document.getElementById('blocklyDiv');
 const ws = Blockly.inject(blocklyDiv, {toolbox});
 
+javascriptGenerator.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
+javascriptGenerator.addReservedWords('highlightBlock');
+
 //const baseUrl = 'https://bibliobus.local/api';
 const baseUrl = 'https://bibliob.us/api';
 //const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
 const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo 
+
+let myInterpreter = null;
+let runnerPid = 0;
+
+function initApi(interpreter, globalObject) {
+
+  // Add an API function for the alert() block, generated for "text_print" blocks.
+  const wrapperAlert = function alert(text) {
+    text = arguments.length ? text : '';
+    outputDiv.innerHTML += '\n' + text;
+  };
+  interpreter.setProperty(globalObject, 'alert', interpreter.createNativeFunction(wrapperAlert));  
+
+  // Add an API function for highlighting blocks.
+  const wrapper = function(id) {
+    id = String(id || '');
+    return highlightBlock(id);
+  };
+  interpreter.setProperty(globalObject, 'highlightBlock',interpreter.createNativeFunction(wrapper));
+
+  // Add an API for the wait block.  See wait_block.js
+  initInterpreterWaitForSeconds(interpreter, globalObject);
+}
+
+/**
+ * Register the interpreter asynchronous function
+ * <code>waitForSeconds()</code>.
+ */
+function initInterpreterWaitForSeconds(interpreter, globalObject) {
+  // Ensure function name does not conflict with variable names.
+  javascriptGenerator.addReservedWords('waitForSeconds');
+
+  const wrapper = interpreter.createAsyncFunction(
+      function(timeInSeconds, callback) {
+      // Delay the call to the callback.
+        setTimeout(callback, timeInSeconds * 1000);
+      });
+  interpreter.setProperty(globalObject, 'waitForSeconds', wrapper);
+}
+
+function highlightBlock(id) {
+  ws.highlightBlock(id);
+}
+
+function resetStepUi(clearOutput) {
+  clearTimeout(runnerPid);
+  ws.highlightBlock(null);
+  runButton.disabled = '';
+
+  if (clearOutput) {
+    outputDiv.innerHTML = '';
+  }
+  myInterpreter = null;
+}
+
 
 //get auth from API
 const refreshToken = async (encodedId) => {
@@ -87,11 +151,47 @@ const showCode = () => {
 
 
 const runCode = () => {
-  runDiv.addEventListener("click", function() {
-    eval(newCode);
+  runButton.addEventListener("click", function() {
+    //eval(newCode);
     //console.log(newCode);
+    if (!myInterpreter) {
+        //resetStepUi(true);
+        // And then show generated code in an alert.
+        // In a timeout to allow the outputArea.value to reset first.
+        setTimeout(function() {
+          alert('Ready to execute the following code\n' +
+              '===================================\n' + newCode);
+
+          // Begin execution
+          myInterpreter = new Interpreter(newCode, initApi);
+          function runner() {
+            if (myInterpreter) {
+              const hasMore = myInterpreter.run();
+              if (hasMore) {
+                // Execution is currently blocked by some async call.
+                // Try again later.
+                runnerPid = setTimeout(runner, 10);
+              }
+              else {
+                // Program is complete.
+                outputDiv.innerHTML += '\n\n<< Program complete >>';
+                resetStepUi(false);
+              }
+              //console.log(Interpreter.nativeGlobal['acorn'].parse(newCode));
+            }
+          }
+          runner();
+        }, 1);
+    }
   });
 };
+
+ws.addChangeListener(function(event) {
+  if (!event.isUiEvent) {
+    // Something changed.  Interpreter needs to be reloaded.
+    resetStepUi(true);
+  }
+});
 
 
 const sendCode = () => {
