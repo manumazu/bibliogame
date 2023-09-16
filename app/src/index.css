@@ -38,3 +38,10 @@ pre, code {
     height: 20vh;
     min-width: 100px;
 }
+
+.ledBlock {
+    padding: 20px;
+    margin: 5px;
+    width: 10px;
+    display: inline-block;
+}

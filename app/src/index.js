@@ -31,6 +31,7 @@ const resetButton = document.getElementById('reset');
 const blocklyDiv = document.getElementById('blocklyDiv');
 const ws = Blockly.inject(blocklyDiv, {toolbox});
 
+//for highlighting blocks
 javascriptGenerator.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
 javascriptGenerator.addReservedWords('highlightBlock');
 
@@ -49,7 +50,13 @@ function initApi(interpreter, globalObject) {
     text = arguments.length ? text : '';
     outputDiv.innerHTML += '\n' + text;
   };
-  interpreter.setProperty(globalObject, 'alert', interpreter.createNativeFunction(wrapperAlert));  
+  interpreter.setProperty(globalObject, 'alert', interpreter.createNativeFunction(wrapperAlert)); 
+
+  // used for adding new elements in output
+  const wrapperNewLed = function newLed(color) {
+    outputDiv.innerHTML += '<div class="ledBlock" style="background-color:'+color+'"></div>';
+  };
+  interpreter.setProperty(globalObject, 'newLed', interpreter.createNativeFunction(wrapperNewLed));
 
   // Add an API function for highlighting blocks.
   const wrapper = function(id) {
@@ -159,8 +166,8 @@ const runCode = () => {
         // And then show generated code in an alert.
         // In a timeout to allow the outputArea.value to reset first.
         setTimeout(function() {
-          alert('Ready to execute the following code\n' +
-              '===================================\n' + newCode);
+          /*alert('Ready to execute the following code\n' +
+              '===================================\n' + newCode);*/
 
           // Begin execution
           myInterpreter = new Interpreter(newCode, initApi);
@@ -185,13 +192,6 @@ const runCode = () => {
     }
   });
 };
-
-ws.addChangeListener(function(event) {
-  if (!event.isUiEvent) {
-    // Something changed.  Interpreter needs to be reloaded.
-    resetStepUi(true);
-  }
-});
 
 
 const sendCode = () => {

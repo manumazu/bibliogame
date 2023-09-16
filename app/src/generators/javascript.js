@@ -40,16 +40,7 @@ forBlock['add_led'] = function (block, generator) {
   const addLed = generator.provideFunction_(
       'addLed',
       `function ${generator.FUNCTION_NAME_PLACEHOLDER_}(color) {
-
-  // Add color div to the output area.
-  const outputDiv = document.getElementById('output');
-  const textEl = document.createElement('div');
-  textEl.style.backgroundColor = color;
-  textEl.style.padding = '20px';
-  textEl.style.margin = '5px';
-  textEl.style.width = '10px';
-  textEl.style.display = 'inline-block';
-  outputDiv.appendChild(textEl);
+  newLed(color);
 }`
   );
   // Generate the function call for this block.
