@@ -12,12 +12,6 @@ import {save, load} from './serialization';
 import {toolbox} from './toolbox';
 import './index.css';
 
-let acorn = require('acorn');
-let Interpreter = require('./interpreter');
-Interpreter.nativeGlobal['acorn'] = acorn;
-
-//console.log(Interpreter.nativeGlobal['acorn'].parse("1 + 1", {ecmaVersion: 2020}));
-
 // Register the blocks and generator with Blockly
 Blockly.common.defineBlocks(blocks);
 Object.assign(javascriptGenerator.forBlock, forBlock);
@@ -31,17 +25,23 @@ const resetButton = document.getElementById('reset');
 const blocklyDiv = document.getElementById('blocklyDiv');
 const ws = Blockly.inject(blocklyDiv, {toolbox});
 
+
+let acorn = require('acorn');
+let Interpreter = require('./interpreter');
+Interpreter.nativeGlobal['acorn'] = acorn;
+
+let myInterpreter = null;
+let runnerPid = 0;
+
 //for highlighting blocks
-javascriptGenerator.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
-javascriptGenerator.addReservedWords('highlightBlock');
+//javascriptGenerator.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
+//javascriptGenerator.addReservedWords('highlightBlock');
 
 //const baseUrl = 'https://bibliobus.local/api';
 const baseUrl = 'https://bibliob.us/api';
 //const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
 const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo 
 
-let myInterpreter = null;
-let runnerPid = 0;
 
 function initApi(interpreter, globalObject) {
 
@@ -52,11 +52,23 @@ function initApi(interpreter, globalObject) {
   };
   interpreter.setProperty(globalObject, 'alert', interpreter.createNativeFunction(wrapperAlert)); 
 
-  // used for adding new elements in output
+  // used for adding new led blocks in output
   const wrapperNewLed = function newLed(color) {
     outputDiv.innerHTML += '<div class="ledBlock" style="background-color:'+color+'"></div>';
   };
   interpreter.setProperty(globalObject, 'newLed', interpreter.createNativeFunction(wrapperNewLed));
+
+  // used for adding new led blocks for strip id in output
+  const wrapperNewLedStrip = function newLedForStrip(color, id) {
+    outputDiv.innerHTML += '<div class="ledBlock" style="background-color:'+color+'" id="'+id+'"></div>';
+  };
+  interpreter.setProperty(globalObject, 'newLedForStrip', interpreter.createNativeFunction(wrapperNewLedStrip));
+
+  // used for addin led strip in output
+  const wrapperNewStrip = function newStrip() {
+    outputDiv.innerHTML += '<div style="display:block" id="changeStrip"></div>';
+  };
+  interpreter.setProperty(globalObject, 'newStrip', interpreter.createNativeFunction(wrapperNewStrip));
 
   // Add an API function for highlighting blocks.
   const wrapper = function(id) {
@@ -79,6 +91,9 @@ function initInterpreterWaitForSeconds(interpreter, globalObject) {
 
   const wrapper = interpreter.createAsyncFunction(
       function(timeInSeconds, callback) {
+        const elems = document.getElementsByClassName('waitForSeconds');
+        let id = 'waitForSeconds_'+elems.length; //set uniq id for wait block
+        outputDiv.innerHTML += '<input type="hidden" class="waitForSeconds" value="'+(timeInSeconds * 1000)+'" id="'+id+'">';
       // Delay the call to the callback.
         setTimeout(callback, timeInSeconds * 1000);
       });
@@ -100,6 +115,49 @@ function resetStepUi(clearOutput) {
   myInterpreter = null;
 }
 
+// This function resets the code and output divs, shows the
+// generated code from the workspace, and evals the code.
+// In a real application, you probably shouldn't use `eval`.
+const showCode = () => {
+  const code = javascriptGenerator.workspaceToCode(ws);
+  codeDiv.innerText = code;
+
+  outputDiv.innerHTML = '';
+  return code;
+};
+
+
+const runCode = () => {
+  runButton.addEventListener("click", function() {
+    //eval(newCode);
+    //console.log(newCode);
+    if (!myInterpreter) {
+        //resetStepUi(true);
+        // And then show generated code in an alert.
+        // In a timeout to allow the outputArea.value to reset first.
+        setTimeout(function() {
+          // Begin execution
+          myInterpreter = new Interpreter(newCode, initApi);
+          function runner() {
+            if (myInterpreter) {
+              const hasMore = myInterpreter.run();
+              if (hasMore) {
+                // Execution is currently blocked by some async call.
+                // Try again later.
+                runnerPid = setTimeout(runner, 10);
+              }
+              else {
+                // Program is complete.
+                //outputDiv.innerHTML += '\n\n<< Program complete >>';
+                resetStepUi(false);
+              }
+            }
+          }
+          runner();
+        }, 1);
+    }
+  });
+};
 
 //get auth from API
 const refreshToken = async (encodedId) => {
@@ -140,75 +198,35 @@ const resetAllRequest = async() => {
       body: JSON.stringify(resetRequest)
     })
    .then(response => response.json())
-   .then(response => console.log(JSON.striwngify(response)))
+   .then(response => console.log(JSON.stringify(response)))
 
    outputDiv.innerHTML = '';
 };
-
-// This function resets the code and output divs, shows the
-// generated code from the workspace, and evals the code.
-// In a real application, you probably shouldn't use `eval`.
-const showCode = () => {
-  const code = javascriptGenerator.workspaceToCode(ws);
-  codeDiv.innerText = code;
-
-  outputDiv.innerHTML = '';
-  return code;
-};
-
-
-const runCode = () => {
-  runButton.addEventListener("click", function() {
-    //eval(newCode);
-    //console.log(newCode);
-    if (!myInterpreter) {
-        //resetStepUi(true);
-        // And then show generated code in an alert.
-        // In a timeout to allow the outputArea.value to reset first.
-        setTimeout(function() {
-          /*alert('Ready to execute the following code\n' +
-              '===================================\n' + newCode);*/
-
-          // Begin execution
-          myInterpreter = new Interpreter(newCode, initApi);
-          function runner() {
-            if (myInterpreter) {
-              const hasMore = myInterpreter.run();
-              if (hasMore) {
-                // Execution is currently blocked by some async call.
-                // Try again later.
-                runnerPid = setTimeout(runner, 10);
-              }
-              else {
-                // Program is complete.
-                outputDiv.innerHTML += '\n\n<< Program complete >>';
-                resetStepUi(false);
-              }
-              //console.log(Interpreter.nativeGlobal['acorn'].parse(newCode));
-            }
-          }
-          runner();
-        }, 1);
-    }
-  });
-};
-
 
 const sendCode = () => {
 
     // build ouptut array and send request to api
     sendButton.addEventListener("click", function() {
       
+      let reqArray = [];
       if (outputDiv.hasChildNodes()) 
       {
         let children = outputDiv.childNodes;
 
         //for (const [i, node] of children) {
         let i = 0;
-        const reqArray = [];
+        let delay = '0';
+        reqArray[0] = [{'delay':0}];
         for (const node of children) {
-          if(node.id == 'changeStrip')
+          if(node.id == 'changeStrip'){
             i = 0;
+          }
+          else if(node.id.match('^waitForSeconds')) {
+            delay = node.value;
+            //await timer(delay);
+            reqArray[node.id] = [{'delay':delay}]; 
+            console.log(reqArray);      
+          }
           else{
             //console.log(i, node.id, node.style.backgroundColor);
             //build json array for each led request
@@ -226,14 +244,19 @@ const sendCode = () => {
                   'id_node':0,
                   'client':'server'};
             i++;
-            console.log(request);
-            reqArray.push(request);
+            //console.log(delay);
+            //console.log(request);
+            //reqArray.push(request);
           }
         }
-        //console.log(reqArray);
 
+        //reqArray.forEach((index, elem) => console.log(index));
+        /*for (let delay in reqArray) {
+          console.log(delay, reqArray[delay])
+        }*/
+        //console.log(reqArray);
         //send request for ligthing leds
-        sendRequest(reqArray);
+        //sendRequest(reqArray);
 
       }
       else {
@@ -241,6 +264,10 @@ const sendCode = () => {
       }
   });
 };
+
+function timer(ms) {
+ return new Promise(res => setTimeout(res, ms));
+}
 
 const resetRequest = () => {
 
