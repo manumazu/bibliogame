@@ -92,7 +92,7 @@ function initInterpreterWaitForSeconds(interpreter, globalObject) {
   const wrapper = interpreter.createAsyncFunction(
       function(timeInSeconds, callback) {
         const elems = document.getElementsByClassName('waitForSeconds');
-        let id = 'waitForSeconds_'+elems.length; //set uniq id for wait block
+        let id = 'iteration_'+(elems.length+1); //set uniq id for wait block
         outputDiv.innerHTML += '<input type="hidden" class="waitForSeconds" value="'+(timeInSeconds * 1000)+'" id="'+id+'">';
       // Delay the call to the callback.
         setTimeout(callback, timeInSeconds * 1000);
@@ -209,23 +209,24 @@ const sendCode = () => {
     sendButton.addEventListener("click", function() {
       
       let reqArray = [];
+      let delay = '0';
+      let nodeId = 'iteration_0'; 
+      
       if (outputDiv.hasChildNodes()) 
       {
         let children = outputDiv.childNodes;
-
-        //for (const [i, node] of children) {
         let i = 0;
-        let delay = '0';
-        reqArray[0] = [{'delay':0}];
+        reqArray[nodeId] = [{'delay':delay}];
+
         for (const node of children) {
           if(node.id == 'changeStrip'){
             i = 0;
           }
-          else if(node.id.match('^waitForSeconds')) {
+          else if(node.id.match('^iteration_')) {
             delay = node.value;
-            //await timer(delay);
-            reqArray[node.id] = [{'delay':delay}]; 
-            console.log(reqArray);      
+            nodeId = node.id;
+            reqArray[nodeId] = [{'delay':delay}]; 
+            //console.log(reqArray);      
           }
           else{
             //console.log(i, node.id, node.style.backgroundColor);
@@ -246,14 +247,12 @@ const sendCode = () => {
             i++;
             //console.log(delay);
             //console.log(request);
-            //reqArray.push(request);
+            reqArray[nodeId].push(request);
           }
         }
 
-        //reqArray.forEach((index, elem) => console.log(index));
-        /*for (let delay in reqArray) {
-          console.log(delay, reqArray[delay])
-        }*/
+        sendRequests(reqArray);
+        //console.log(reqArray);
         //console.log(reqArray);
         //send request for ligthing leds
         //sendRequest(reqArray);
@@ -264,6 +263,50 @@ const sendCode = () => {
       }
   });
 };
+
+
+async function sendRequests(requests) {
+  //console.log(requests.length);
+   //for (let i = 0; i < Object.keys(requests).length; i++) {
+   for (let iteration in requests) {
+      const elements = requests[iteration];
+      for (let i=0; i < elements.length; i++) {
+        if(elements[i]['delay'] !== undefined) {
+          const delay = elements[i]['delay'];
+          console.log(delay);
+          await timer(delay);
+        }
+        else {
+          let req = []
+          req.push(elements[i]);
+        } 
+        if(typeof(req) != 'undefined') {
+            console.log(req); 
+        }                
+      }
+      //console.log(typeof(req));      
+      /*for (let elements in ) {
+        console.log(elements);
+        //await timer(1000);
+      }*/
+    }
+    console.log("Finish");   
+  /*for (let iteration in requests) {
+      //console.log(reqArray[iteration]);
+      requests[iteration].forEach(async (elems) => {
+        if(elems['delay'] !== undefined) {
+          console.log(elems['delay']);
+          await timer(Number(elems['delay']));
+          //console.log(elems);
+          //console.log('toto');
+        }
+        else {
+         await console.log(elems);
+        }
+
+      });
+  }*/
+}
 
 function timer(ms) {
  return new Promise(res => setTimeout(res, ms));
