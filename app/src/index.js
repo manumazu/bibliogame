@@ -53,22 +53,25 @@ function initApi(interpreter, globalObject) {
   interpreter.setProperty(globalObject, 'alert', interpreter.createNativeFunction(wrapperAlert)); 
 
   // used for adding new led blocks in output
-  const wrapperNewLed = function newLed(color) {
-    outputDiv.innerHTML += '<div class="ledBlock" style="background-color:'+color+'"></div>';
-  };
-  interpreter.setProperty(globalObject, 'newLed', interpreter.createNativeFunction(wrapperNewLed));
+  const wrapperAddLed = interpreter.createNativeFunction( 
+    function (color) {
+      outputDiv.innerHTML += '<div class="ledBlock" style="background-color:'+color+'"></div>';
+  });
+  interpreter.setProperty(globalObject, 'addLed', wrapperAddLed);
 
   // used for adding new led blocks for strip id in output
-  const wrapperNewLedStrip = function newLedForStrip(color, id) {
-    outputDiv.innerHTML += '<div class="ledBlock" style="background-color:'+color+'" id="'+id+'"></div>';
-  };
-  interpreter.setProperty(globalObject, 'newLedForStrip', interpreter.createNativeFunction(wrapperNewLedStrip));
+  const wrapperAddLedStrip = interpreter.createNativeFunction( 
+    function (color, id) {
+      outputDiv.innerHTML += '<div class="ledBlock" style="background-color:'+color+'" id="'+id+'"></div>';
+  });
+  interpreter.setProperty(globalObject, 'addLedStrip', wrapperAddLedStrip);
 
   // used for addin led strip in output
-  const wrapperNewStrip = function newStrip() {
-    outputDiv.innerHTML += '<div style="display:block" id="changeStrip"></div>';
-  };
-  interpreter.setProperty(globalObject, 'newStrip', interpreter.createNativeFunction(wrapperNewStrip));
+  const wrapperChangeStripLed = interpreter.createNativeFunction(
+    function () {
+      outputDiv.innerHTML += '<div style="display:block" id="changeStrip"></div>';
+  });
+  interpreter.setProperty(globalObject, 'changeStripLed', wrapperChangeStripLed);
 
   // Add an API function for highlighting blocks.
   const wrapper = function(id) {
