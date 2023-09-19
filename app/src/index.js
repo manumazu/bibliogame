@@ -140,7 +140,7 @@ const runCode = () => {
           myInterpreter = new Interpreter(newCode, initApi);
           function runner() {
             if (myInterpreter) {
-              const hasMore = myInterpreter.run();
+              const hasMore = myInterpreter.run();              
               if (hasMore) {
                 // Execution is currently blocked by some async call.
                 // Try again later.
@@ -203,115 +203,6 @@ const resetAllRequest = async() => {
    outputDiv.innerHTML = '';
 };
 
-const sendCode = () => {
-
-    // build ouptut array and send request to api
-    sendButton.addEventListener("click", function() {
-      
-      let reqArray = [];
-      let delay = '0';
-      let nodeId = 'iteration_0'; 
-      
-      if (outputDiv.hasChildNodes()) 
-      {
-        let children = outputDiv.childNodes;
-        let i = 0;
-        reqArray[nodeId] = [{'delay':delay}];
-
-        for (const node of children) {
-          if(node.id == 'changeStrip'){
-            i = 0;
-          }
-          else if(node.id.match('^iteration_')) {
-            delay = node.value;
-            nodeId = node.id;
-            reqArray[nodeId] = [{'delay':delay}]; 
-            //console.log(reqArray);      
-          }
-          else{
-            //console.log(i, node.id, node.style.backgroundColor);
-            //build json array for each led request
-            const row = node.id.split('_');
-            const colorStr = node.style.backgroundColor.substr(3);
-            var regExp = /\(([^)]+)\)/;
-            var color = regExp.exec(colorStr);
-            //console.log(color[1]);
-            const request = {'action':'add',
-                  'row':parseInt(row[1]), //strip_1
-                  'led_column':i, //index
-                  'interval':1,
-                  'id_tag':null,
-                  'color':color[1],
-                  'id_node':0,
-                  'client':'server'};
-            i++;
-            //console.log(delay);
-            //console.log(request);
-            reqArray[nodeId].push(request);
-          }
-        }
-
-        sendRequests(reqArray);
-        //console.log(reqArray);
-        //console.log(reqArray);
-        //send request for ligthing leds
-        //sendRequest(reqArray);
-
-      }
-      else {
-        alert("Press RUN button before saving something");
-      }
-  });
-};
-
-
-async function sendRequests(requests) {
-  //console.log(requests.length);
-   //for (let i = 0; i < Object.keys(requests).length; i++) {
-   for (let iteration in requests) {
-      const elements = requests[iteration];
-      for (let i=0; i < elements.length; i++) {
-        if(elements[i]['delay'] !== undefined) {
-          const delay = elements[i]['delay'];
-          console.log(delay);
-          await timer(delay);
-        }
-        else {
-          let req = []
-          req.push(elements[i]);
-        } 
-        if(typeof(req) != 'undefined') {
-            console.log(req); 
-        }                
-      }
-      //console.log(typeof(req));      
-      /*for (let elements in ) {
-        console.log(elements);
-        //await timer(1000);
-      }*/
-    }
-    console.log("Finish");   
-  /*for (let iteration in requests) {
-      //console.log(reqArray[iteration]);
-      requests[iteration].forEach(async (elems) => {
-        if(elems['delay'] !== undefined) {
-          console.log(elems['delay']);
-          await timer(Number(elems['delay']));
-          //console.log(elems);
-          //console.log('toto');
-        }
-        else {
-         await console.log(elems);
-        }
-
-      });
-  }*/
-}
-
-function timer(ms) {
- return new Promise(res => setTimeout(res, ms));
-}
-
 const resetRequest = () => {
 
     // build ouptut array and send request to api
@@ -319,6 +210,82 @@ const resetRequest = () => {
       resetAllRequest();
     })
 }
+
+const sendCode = () => {
+
+    sendButton.addEventListener("click", async function() {
+      
+      if (outputDiv.hasChildNodes()) 
+      {
+        // build ouptut array and send request to api with timer
+        const requestArray = parseOutput();
+                    
+        for (let iteration in requestArray) {
+          let delayNode = requestArray[iteration];
+          for (let delay in delayNode) {
+            await timer(delay);
+            //send request
+            if(Array.isArray(delayNode[delay])) {
+              console.log(delayNode[delay]);
+              sendRequest(delayNode[delay]);  
+            } 
+          }
+        }
+      }
+      else {
+        alert("Press RUN button before saving something");
+      }
+  });
+};
+
+function parseOutput() {
+  let reqArray = [];
+  let delay = '0';
+  let nodeId = 'iteration_0';         
+  let children = outputDiv.childNodes;
+  let i = 0;
+  reqArray[nodeId] = [delay];
+  reqArray[nodeId][delay] = []; 
+
+  for (const node of children) {
+    if(node.id == 'changeStrip'){
+      i = 0;
+    }
+    //build array for each iteration with delay
+    else if(node.id.match('^iteration_')) {
+      delay = node.value;
+      nodeId = node.id;
+      reqArray[nodeId] = [delay];
+      reqArray[nodeId][delay] = []; 
+      //console.log(reqArray);      
+    }
+    else{
+      //build json array for each led request
+      const row = node.id.split('_');
+      const colorStr = node.style.backgroundColor.substr(3);
+      var regExp = /\(([^)]+)\)/;
+      var color = regExp.exec(colorStr);
+      const request = {'action':'add',
+            'row':parseInt(row[1]), //strip_1
+            'led_column':i, //index
+            'interval':1,
+            'id_tag':null,
+            'color':color[1],
+            'id_node':0,
+            'client':'server'};
+      i++;
+      //console.log(request);
+      reqArray[nodeId][delay].push(request);
+    }
+  }
+  return reqArray;
+}
+
+
+function timer(ms) {
+ return new Promise(res => setTimeout(res, ms));
+}
+
 
 // Load the initial state from storage and run the code.
 load(ws);
