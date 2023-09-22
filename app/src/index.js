@@ -256,7 +256,7 @@ function parseOutput() {
   let children = outputDiv.childNodes;
   let i = 0;
   reqArray[nodeId] = [delay];
-  reqArray[nodeId][delay] = []; 
+  reqArray[nodeId][delay] = [];
 
   for (const node of children) {
     if(node.id == 'changeStrip'){
@@ -271,22 +271,24 @@ function parseOutput() {
       //console.log(reqArray);      
     }
     else{
-      //build json array for each led request
+      let strips = node.childNodes;
       const row = node.id.split('_');
-      const colorStr = node.style.backgroundColor.substr(3);
-      var regExp = /\(([^)]+)\)/;
-      var color = regExp.exec(colorStr);
-      const request = {'action':'add',
-            'row':parseInt(row[1]), //strip_1
-            'led_column':i, //index
-            'interval':1,
-            'id_tag':null,
-            'color':color[1],
-            'id_node':0,
-            'client':'server'};
-      i++;
-      //console.log(request);
-      reqArray[nodeId][delay].push(request);
+      for (const led of strips) {
+        //build json array for each led request
+        const colorStr = led.style.backgroundColor.substr(3);
+        var regExp = /\(([^)]+)\)/;
+        var color = regExp.exec(colorStr);
+        const request = {'action':'add',
+              'row':parseInt(row[1]), //strip_1
+              'led_column':i, //index
+              'interval':1,
+              'id_tag':null,
+              'color':color[1],
+              'id_node':0,
+              'client':'server'};
+        i++;
+        reqArray[nodeId][delay].push(request);
+      }
     }
   }
   return reqArray;
