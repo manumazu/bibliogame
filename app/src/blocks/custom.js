@@ -101,8 +101,28 @@ const waitSeconds = {
   'colour': '%{BKY_LOOPS_HUE}',
 };
 
+const waitSecondsForStrip = {
+  'type': 'wait_seconds_strip',
+  'message0': ' wait %1 seconds for strip %2',
+  'args0': [
+    {
+      'type': 'field_number',
+      'name': 'SECONDS',
+      'min': 0,
+      'max': 600,
+      'value': 1,
+    },
+    {
+      'type': 'input_value',
+      'name': 'TEXT',
+    }],
+  'previousStatement': null,
+  'nextStatement': null,
+  'colour': '%{BKY_LOOPS_HUE}',
+};
+
 
 // Create the block definitions for the JSON-only blocks.
 // This does not register their definitions with Blockly.
 // This file has no side effects!
-export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([addText, addLed, addLedStrip, nextStripLed, waitSeconds]);
+export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([addText, addLed, addLedStrip, nextStripLed, waitSeconds, waitSecondsForStrip]);

@@ -62,3 +62,10 @@ forBlock['wait_seconds'] = function(block, generator) {
   return code;
 };
 
+forBlock['wait_seconds_strip'] = function(block, generator) {
+  const seconds = Number(block.getFieldValue('SECONDS'));
+  const strip_num = (generator.valueToCode(block, 'TEXT', Order.MEMBER));
+  const code = 'waitForSecondsForStrip(' + seconds + ', ' + strip_num + ');\n';
+  return code;
+};
+

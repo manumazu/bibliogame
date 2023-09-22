@@ -113,6 +113,10 @@ export const toolbox = {
         },
         {
           'kind': 'block',
+          'type': 'wait_seconds_strip',
+        }, 
+        {
+          'kind': 'block',
           'type': 'wait_seconds',
         },    
       ],

@@ -64,12 +64,13 @@ function initApi(interpreter, globalObject) {
   const wrapperAddLedStrip = interpreter.createNativeFunction( 
     function (color, strip_id) {
       let stripDiv = document.getElementById(strip_id);
+      const ledDiv = '<div class="ledBlock" style="background-color:' + color + '"></div>';
       //add color to strip div
       if(stripDiv !== null) {
-        stripDiv.innerHTML += '<div class="ledBlock" style="background-color:'+color+'"></div>';
+        stripDiv.innerHTML += ledDiv;
       }
       else { // create new strip with color
-        outputDiv.innerHTML += '<div id="'+strip_id+'"><div class="ledBlock" style="background-color:'+color+'"></div></div>';
+        outputDiv.innerHTML += '<div id="' + strip_id + '">' + ledDiv + '</div>';
       }
   });
   interpreter.setProperty(globalObject, 'addLedStrip', wrapperAddLedStrip);
@@ -90,6 +91,7 @@ function initApi(interpreter, globalObject) {
 
   // Add an API for the wait block.  See wait_block.js
   initInterpreterWaitForSeconds(interpreter, globalObject);
+  initInterpreterWaitForSecondsForStrip(interpreter, globalObject);
 }
 
 /**
@@ -109,6 +111,32 @@ function initInterpreterWaitForSeconds(interpreter, globalObject) {
         setTimeout(callback, timeInSeconds * 1000);
       });
   interpreter.setProperty(globalObject, 'waitForSeconds', wrapper);
+}
+
+
+/**
+ * Register the interpreter asynchronous function
+ * <code>waitForSeconds()</code> inside strip led block.
+ */
+function initInterpreterWaitForSecondsForStrip(interpreter, globalObject) {
+  // Ensure function name does not conflict with variable names.
+  javascriptGenerator.addReservedWords('waitForSecondsForStrip');
+
+  const wrapper = interpreter.createAsyncFunction(
+      function(timeInSeconds, stripId, callback) {
+        let stripDiv = document.getElementById(stripId);
+        const inputTimer = '<input type="hidden" class="waitForSecondsForStrip" value="'+(timeInSeconds * 1000)+'">';
+        //add timer to strip div
+        if(stripDiv !== null) {
+          stripDiv.innerHTML += inputTimer;
+        }
+        else { // create new strip with timer
+          outputDiv.innerHTML += '<div id="'+stripId+'">'+inputTimer+'</div>';
+        }
+        // Delay the call to the callback.
+        setTimeout(callback, timeInSeconds * 1000);
+      });
+  interpreter.setProperty(globalObject, 'waitForSecondsForStrip', wrapper);
 }
 
 function highlightBlock(id) {
