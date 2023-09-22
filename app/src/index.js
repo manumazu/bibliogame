@@ -37,8 +37,9 @@ let runnerPid = 0;
 //javascriptGenerator.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
 //javascriptGenerator.addReservedWords('highlightBlock');
 
-//const baseUrl = 'https://bibliobus.local/api';
-const baseUrl = 'https://bibliob.us/api';
+//const baseUrl = 'https://127.0.0.1:5000/api';
+const baseUrl = 'https://bibliobus.local/api';
+//const baseUrl = 'https://bibliob.us/api';
 //const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
 const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo 
 
@@ -61,8 +62,15 @@ function initApi(interpreter, globalObject) {
 
   // used for adding new led blocks for strip id in output
   const wrapperAddLedStrip = interpreter.createNativeFunction( 
-    function (color, id) {
-      outputDiv.innerHTML += '<div class="ledBlock" style="background-color:'+color+'" id="'+id+'"></div>';
+    function (color, strip_id) {
+      let stripDiv = document.getElementById(strip_id);
+      //add color to strip div
+      if(stripDiv !== null) {
+        stripDiv.innerHTML += '<div class="ledBlock" style="background-color:'+color+'"></div>';
+      }
+      else { // create new strip with color
+        outputDiv.innerHTML += '<div id="'+strip_id+'"><div class="ledBlock" style="background-color:'+color+'"></div></div>';
+      }
   });
   interpreter.setProperty(globalObject, 'addLedStrip', wrapperAddLedStrip);
 
