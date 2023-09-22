@@ -667,12 +667,12 @@ export const toolbox = {
                   'COLOUR': '#aa00cc',
                 },
               },
-              'LIST': {
-                'block': {
-                  'type': 'variables_get',
-                },
+            },
+            'TEXT': {
+              'shadow': {
+                'type': 'text'
               },
-            },    
+            }                
           },
         },        
         {

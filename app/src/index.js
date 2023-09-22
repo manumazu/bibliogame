@@ -38,8 +38,8 @@ let runnerPid = 0;
 //javascriptGenerator.addReservedWords('highlightBlock');
 
 //const baseUrl = 'https://127.0.0.1:5000/api';
-const baseUrl = 'https://bibliobus.local/api';
-//const baseUrl = 'https://bibliob.us/api';
+//const baseUrl = 'https://bibliobus.local/api';
+const baseUrl = 'https://bibliob.us/api';
 //const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
 const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo 
 
@@ -235,10 +235,11 @@ const sendCode = () => {
           let delayNode = requestArray[iteration];
           for (let delay in delayNode) {
             await timer(delay);
+            console.log(delay);
             //send request
             if(Array.isArray(delayNode[delay])) {
               console.log(delayNode[delay]);
-              sendRequest(delayNode[delay]);  
+              //sendRequest(delayNode[delay]);  
             } 
           }
         }
@@ -273,6 +274,7 @@ function parseOutput() {
     else{
       let strips = node.childNodes;
       const row = node.id.split('_');
+      i = 0;
       for (const led of strips) {
         //build json array for each led request
         const colorStr = led.style.backgroundColor.substr(3);
