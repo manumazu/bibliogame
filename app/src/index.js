@@ -38,8 +38,8 @@ let runnerPid = 0;
 //javascriptGenerator.addReservedWords('highlightBlock');
 
 //const baseUrl = 'https://127.0.0.1:5000/api';
-//const baseUrl = 'https://bibliobus.local/api';
-const baseUrl = 'https://bibliob.us/api';
+const baseUrl = 'https://bibliobus.local/api';
+//const baseUrl = 'https://bibliob.us/api';
 //const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
 const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo 
 
@@ -124,13 +124,15 @@ function initInterpreterWaitForSecondsForStrip(interpreter, globalObject) {
 
   const wrapper = interpreter.createAsyncFunction(
       function(timeInSeconds, stripId, callback) {
+        const elems = document.getElementsByClassName('waitForSeconds');
+        let id = 'iteration_'+(elems.length+1); //set uniq id for wait block inside strip
         let stripDiv = document.getElementById(stripId);
-        const inputTimer = '<input type="hidden" class="waitForSecondsForStrip" value="'+(timeInSeconds * 1000)+'">';
+        const inputTimer = '<input type="hidden" class="waitForSeconds" value="'+(timeInSeconds * 1000)+'" id="' + id + '">';
         //add timer to strip div
         if(stripDiv !== null) {
           stripDiv.innerHTML += inputTimer;
         }
-        else { // create new strip with timer
+        else { // create new strip with timer 
           outputDiv.innerHTML += '<div id="'+stripId+'">'+inputTimer+'</div>';
         }
         // Delay the call to the callback.
@@ -262,12 +264,14 @@ const sendCode = () => {
         for (let iteration in requestArray) {
           let delayNode = requestArray[iteration];
           for (let delay in delayNode) {
-            await timer(delay);
-            console.log(delay);
+            if (Number(delay) > 0) {
+              //console.log(JSON.stringify(delay));
+              await timer(delay);
+            }
             //send request
-            if(Array.isArray(delayNode[delay])) {
-              console.log(delayNode[delay]);
-              //sendRequest(delayNode[delay]);  
+            if(Array.isArray(delayNode[delay]) && delayNode[delay].length > 0) {
+              //console.log(JSON.stringify(delayNode[delay]));
+              sendRequest(delayNode[delay]);  
             } 
           }
         }
@@ -286,38 +290,48 @@ function parseOutput() {
   let i = 0;
   reqArray[nodeId] = [delay];
   reqArray[nodeId][delay] = [];
+  //console.log('init', nodeId, delay);
 
   for (const node of children) {
     if(node.id == 'changeStrip'){
       i = 0;
     }
     //build array for each iteration with delay
-    else if(node.id.match('^iteration_')) {
+    else if(node.className == 'waitForSeconds') {
       delay = node.value;
       nodeId = node.id;
       reqArray[nodeId] = [delay];
       reqArray[nodeId][delay] = []; 
-      //console.log(reqArray);      
+      //console.log('outside strip', nodeId, delay);    
     }
-    else{
+    else{ // build array for each strips, with delay
       let strips = node.childNodes;
-      const row = node.id.split('_');
+      const row = node.id.split('_'); //strip_n
       i = 0;
       for (const led of strips) {
-        //build json array for each led request
-        const colorStr = led.style.backgroundColor.substr(3);
-        var regExp = /\(([^)]+)\)/;
-        var color = regExp.exec(colorStr);
-        const request = {'action':'add',
-              'row':parseInt(row[1]), //strip_1
-              'led_column':i, //index
-              'interval':1,
-              'id_tag':null,
-              'color':color[1],
-              'id_node':0,
-              'client':'server'};
-        i++;
-        reqArray[nodeId][delay].push(request);
+        if(led.className == 'waitForSeconds') { //set array for delay iteration
+          delay = led.value;
+          nodeId = led.id;
+          reqArray[nodeId] = [delay];
+          reqArray[nodeId][delay] = [];
+          //console.log('inside strip',nodeId,delay);
+        }
+        else{
+          //build json array for each led request
+          const colorStr = led.style.backgroundColor.substr(3);
+          var regExp = /\(([^)]+)\)/;
+          var color = regExp.exec(colorStr);
+          const request = {'action':'add',
+                'row':parseInt(row[1]),
+                'led_column':i, //index
+                'interval':1,
+                'id_tag':null,
+                'color':color[1],
+                'id_node':0,
+                'client':'server'};
+          i++;
+          reqArray[nodeId][delay].push(request);
+        }
       }
     }
   }
