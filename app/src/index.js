@@ -103,7 +103,8 @@ function wrapperAddLedStrip(interpreter, globalObject) {
     function (color, strip_id) {
       let stripDiv = document.getElementById(strip_id);
       let ledIndex = 0;
-      //console.log('strip', strip_id);
+      let nbstrips = document.getElementsByClassName('strip').length;
+      //console.log('strip', strip_id, nbstrips.length);    
 
       const ledDiv = '<div class="ledBlock" style="background-color:' + color + '"></div>';
       //add color to strip div
@@ -111,8 +112,15 @@ function wrapperAddLedStrip(interpreter, globalObject) {
         stripDiv.innerHTML += ledDiv;
         ledIndex = stripDiv.getElementsByClassName('ledBlock').length-1;
         // prevent index not to big greater than current led strip (ie : demo module is 32 leds per strip)
-        if(ledIndex >= 32)
-          ledIndex =  ledIndex - 32 ;  
+        let maxLeds = 32; // must be dependant with biblioapp values       
+        if(ledIndex >= maxLeds) {
+          let newledIndex =  ledIndex - maxLeds;
+          if(newledIndex >= maxLeds)
+            ledIndex = ledIndex - maxLeds*nbstrips;
+          else
+            ledIndex = newledIndex;
+        }
+        
       }
       else { // create new strip with color
         outputDiv.innerHTML += '<div id="' + strip_id + '" class="strip">' + ledDiv + '</div>';
@@ -120,7 +128,6 @@ function wrapperAddLedStrip(interpreter, globalObject) {
 
       // add led for current iteration for sending request
       ledsArray[iteration][delay].push({'strip':strip_id, 'led_index':ledIndex, 'color':color});
-
   });
   interpreter.setProperty(globalObject, 'addLedStrip', wrapper);
 }
@@ -145,8 +152,7 @@ function initInterpreterWaitForSeconds(interpreter, globalObject) {
         ledsArray[iteration] = [delay]
         ledsArray[iteration][delay] = []
 
-        //for timer between 2 loops, we need to split timer inside each loop
-        const strips = document.getElementsByClassName('strip');
+        //new timer for output
         let inputTimer = '<input type="hidden" class="waitForSeconds" value="' + delay + '" id="' + id + '">';
         outputDiv.innerHTML += inputTimer;
         // Delay the call to the callback.
@@ -301,7 +307,7 @@ const sendCode = () => {
                 requestArray.push(request)
               }
               console.log(requestArray);
-              //sendRequest(requestArray);  
+              sendRequest(requestArray);  
             } 
           }
         }
