@@ -38,11 +38,28 @@ let runnerPid = 0;
 //javascriptGenerator.addReservedWords('highlightBlock');
 
 //const baseUrl = 'https://127.0.0.1:5000/api';
-const baseUrl = 'https://bibliobus.local/api';
-//const baseUrl = 'https://bibliob.us/api';
+//const baseUrl = 'https://bibliobus.local/api';
+const baseUrl = 'https://bibliob.us/api';
 //const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
 const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo 
 
+let ledsArray = [];//['iteration_0'];
+let iteration = 'iteration_0';
+let delay = 0;
+ledsArray[iteration] = [delay];
+ledsArray[iteration][delay]=[];
+
+
+function initLedsArray() {
+
+  // Reinit Leds Array when code changes 
+  ledsArray = [];
+  iteration = 'iteration_0';
+  delay = 0;
+  ledsArray[iteration] = [delay];
+  ledsArray[iteration][delay]=[];
+
+}
 
 function initApi(interpreter, globalObject) {
 
@@ -60,22 +77,6 @@ function initApi(interpreter, globalObject) {
   });
   interpreter.setProperty(globalObject, 'addLed', wrapperAddLed);
 
-  // used for adding new led blocks for strip id in output
-  const wrapperAddLedStrip = interpreter.createNativeFunction( 
-    function (color, strip_id) {
-      let stripDiv = document.getElementById(strip_id);
-      //console.log('strip', strip_id);
-      const ledDiv = '<div class="ledBlock" style="background-color:' + color + '"></div>';
-      //add color to strip div
-      if(stripDiv !== null) {
-        stripDiv.innerHTML += ledDiv;
-      }
-      else { // create new strip with color
-        outputDiv.innerHTML += '<div id="' + strip_id + '" class="strip">' + ledDiv + '</div>';
-      }
-  });
-  interpreter.setProperty(globalObject, 'addLedStrip', wrapperAddLedStrip);
-
   // used for addin led strip in output
   const wrapperChangeStripLed = interpreter.createNativeFunction(
     function () {
@@ -90,9 +91,38 @@ function initApi(interpreter, globalObject) {
   };
   interpreter.setProperty(globalObject, 'highlightBlock',interpreter.createNativeFunction(wrapper));
 
-  // Add an API for the wait block.  See wait_block.js
+  // Add an API for the wait block.  See javascript.js
   initInterpreterWaitForSeconds(interpreter, globalObject);
   initInterpreterWaitForSecondsForStrip(interpreter, globalObject);
+  wrapperAddLedStrip(interpreter, globalObject);
+}
+
+function wrapperAddLedStrip(interpreter, globalObject) {
+  // used for adding new led blocks for strip id in output
+  const wrapper = interpreter.createNativeFunction( 
+    function (color, strip_id) {
+      let stripDiv = document.getElementById(strip_id);
+      let ledIndex = 0;
+      //console.log('strip', strip_id);
+
+      const ledDiv = '<div class="ledBlock" style="background-color:' + color + '"></div>';
+      //add color to strip div
+      if(stripDiv !== null) {
+        stripDiv.innerHTML += ledDiv;
+        ledIndex = stripDiv.getElementsByClassName('ledBlock').length-1;
+        // prevent index not to big greater than current led strip (ie : demo module is 32 leds per strip)
+        if(ledIndex >= 32)
+          ledIndex =  ledIndex - 32 ;  
+      }
+      else { // create new strip with color
+        outputDiv.innerHTML += '<div id="' + strip_id + '" class="strip">' + ledDiv + '</div>';
+      }
+
+      // add led for current iteration for sending request
+      ledsArray[iteration][delay].push({'strip':strip_id, 'led_index':ledIndex, 'color':color});
+
+  });
+  interpreter.setProperty(globalObject, 'addLedStrip', wrapper);
 }
 
 /**
@@ -108,29 +138,17 @@ function initInterpreterWaitForSeconds(interpreter, globalObject) {
 
         const elems = document.getElementsByClassName('waitForSeconds');
         let id = 'iteration_'+(elems.length+1); //set uniq id for wait block
+        
+        //init leds Array with iteration ID
+        iteration = id;
+        delay = timeInSeconds * 1000;
+        ledsArray[iteration] = [delay]
+        ledsArray[iteration][delay] = []
 
         //for timer between 2 loops, we need to split timer inside each loop
         const strips = document.getElementsByClassName('strip');
-        if(strips.length > 1) {
-          let i = 0;
-          for (let strip in strips) {
-            if(typeof(strips[strip]) !== 'undefined'){
-              let stripId = strips[strip].id;
-              //console.log(stripId);
-              
-              //add time filed for each strip div
-              if(typeof(stripId) !== 'undefined'){
-                let stripDiv = document.getElementById(stripId);
-                let inputTimer = '<input type="hidden" class="waitForSeconds" value="'+(timeInSeconds * 1000)+'" id="' + id + '">';
-                stripDiv.innerHTML += inputTimer;
-              }
-            }
-          }
-        }
-        else {
-          let inputTimer = '<input type="hidden" class="waitForSeconds" value="'+(timeInSeconds * 1000)+'" id="' + id + '">';
-          outputDiv.innerHTML += inputTimer;
-        }
+        let inputTimer = '<input type="hidden" class="waitForSeconds" value="' + delay + '" id="' + id + '">';
+        outputDiv.innerHTML += inputTimer;
         // Delay the call to the callback.
         setTimeout(callback, timeInSeconds * 1000);
       });
@@ -148,8 +166,16 @@ function initInterpreterWaitForSecondsForStrip(interpreter, globalObject) {
 
   const wrapper = interpreter.createAsyncFunction(
       function(timeInSeconds, stripId, callback) {
+        
         const elems = document.getElementsByClassName('waitForSeconds');
         let id = 'iteration_'+(elems.length+1); //set uniq id for wait block inside strip
+
+        //init leds Array with iteration ID
+        iteration = id;
+        delay = timeInSeconds * 1000;
+        ledsArray[iteration] = [delay]
+        ledsArray[iteration][delay] = []
+
         let stripDiv = document.getElementById(stripId);
         const inputTimer = '<input type="hidden" class="waitForSeconds" value="'+(timeInSeconds * 1000)+'" id="' + id + '">';
         //add timer to strip div
@@ -176,6 +202,7 @@ function resetStepUi(clearOutput) {
 
   if (clearOutput) {
     outputDiv.innerHTML = '';
+    initLedsArray();
   }
   myInterpreter = null;
 }
@@ -188,6 +215,7 @@ const showCode = () => {
   codeDiv.innerText = code;
 
   outputDiv.innerHTML = '';
+  initLedsArray();
   return code;
 };
 
@@ -228,23 +256,52 @@ const sendCode = () => {
 
     sendButton.addEventListener("click", async function() {
       
+
+      // build ouptut array and send request to api with timer
       if (outputDiv.hasChildNodes()) 
       {
-        // build ouptut array and send request to api with timer
-        const requestArray = parseOutput();
 
-        for (let iteration in requestArray) {
-          console.log(iteration);
-          let delayNode = requestArray[iteration];
+        // used for converting color hexa to rgb format
+        const hex2rgb = (hex) => {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+
+            return r + ',' + g + ',' + b;
+        }        
+
+        for (let iteration in ledsArray) {//requestArray) {
+          //console.log(iteration);
+          // pause during execution
+          let delayNode = ledsArray[iteration];
           for (let delay in delayNode) {
             if (Number(delay) > 0) {
-              console.log(JSON.stringify(delay));
+              console.log(delay);
               await timer(delay);
             }
             //send request
             if(Array.isArray(delayNode[delay]) && delayNode[delay].length > 0) {
-              console.log(JSON.stringify(delayNode[delay]));
-              //sendRequest(delayNode[delay]);  
+              //console.log(JSON.stringify(delayNode[delay]));
+              const requestArray = [];
+              for (let node in delayNode[delay]) 
+              {
+                //console.log(delayNode[delay][node]['strip'], delayNode[delay][node]['color']);
+                const row = delayNode[delay][node]['strip'].split('_'); //strip_n
+                const ledIndex = delayNode[delay][node]['led_index'];
+                const color = delayNode[delay][node]['color'];
+
+                const request = {'action':'add',
+                'row':parseInt(row[1]),
+                'led_column':ledIndex, //index
+                'interval':1,
+                'id_tag':null,
+                'color':hex2rgb(color),
+                'id_node':0,
+                'client':'server'};
+                requestArray.push(request)
+              }
+              console.log(requestArray);
+              //sendRequest(requestArray);  
             } 
           }
         }
@@ -254,72 +311,6 @@ const sendCode = () => {
       }
   });
 };
-
-function parseOutput() {
-  let reqArray = [];
-  let delay = '0';
-  let nodeId = 'iteration_0';         
-  let children = outputDiv.childNodes;
-  let i = 0;
-  reqArray[nodeId] = [delay];
-  reqArray[nodeId][delay] = [];
-  console.log('init', nodeId, delay);
-
-  for (const node of children) {
-    if(node.id == 'changeStrip'){
-      i = 0;
-    }
-    //build array for each iteration with delay
-    else if(node.className == 'waitForSeconds') {
-      delay = node.value;
-      nodeId = node.id;
-      reqArray[nodeId] = [delay];
-      reqArray[nodeId][delay] = []; 
-      console.log('outside strip', nodeId, delay);    
-    }
-    else{ // build array for each strips, with delay
-      let strips = node.childNodes;
-      const row = node.id.split('_'); //strip_n
-      i = 0;
-      for (const led of strips) {
-        if(led.className == 'waitForSeconds') { //set array for delay iteration
-          delay = led.value;
-          nodeId = led.id;
-          reqArray[nodeId] = [delay];
-          reqArray[nodeId][delay] = [];
-          console.log('inside strip',nodeId,delay);
-        }
-        else{
-          //build json array for each led request
-          const colorStr = led.style.backgroundColor.substr(3);
-          var regExp = /\(([^)]+)\)/;
-          var color = regExp.exec(colorStr);
-          const request = {'action':'add',
-                'row':parseInt(row[1]),
-                'led_column':i, //index
-                'interval':1,
-                'id_tag':null,
-                'color':color[1],
-                'id_node':0,
-                'client':'server'};
-          i++;
-          //console.log(JSON.stringify(request));
-          reqArray[nodeId][delay].push(request);
-        }
-      }
-    }
-  }
-
-  //sort array by iteration keys
-  var keys = Object.keys(reqArray).sort();
-  var tuples = {};
-
-  for(var j in keys) {
-     tuples[keys[j]] = reqArray[keys[j]];
-  }
-  
-  return tuples;
-}
 
 //get auth from API
 const refreshToken = async (encodedId) => {
@@ -363,6 +354,7 @@ const resetAllRequest = async() => {
    .then(response => console.log(JSON.stringify(response)))
 
    outputDiv.innerHTML = '';
+   initLedsArray();
 };
 
 const resetRequest = () => {
