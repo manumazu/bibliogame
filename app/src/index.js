@@ -104,30 +104,23 @@ function wrapperAddLedStrip(interpreter, globalObject) {
       let stripDiv = document.getElementById(strip_id);
       let ledIndex = 0;
       let nbstrips = document.getElementsByClassName('strip').length;
-      //console.log('strip', strip_id, nbstrips.length);    
+      // prevent index not to big greater than current led strip (ie : demo module is 32 leds per strip)
+      let maxLeds = 16; // must be dependant with biblioapp values 
 
       const ledDiv = '<div class="ledBlock" style="background-color:' + color + '"></div>';
       //add color to strip div
       if(stripDiv !== null) {
         stripDiv.innerHTML += ledDiv;
         ledIndex = stripDiv.getElementsByClassName('ledBlock').length-1;
-        // prevent index not to big greater than current led strip (ie : demo module is 32 leds per strip)
-        let maxLeds = 32; // must be dependant with biblioapp values       
-        if(ledIndex >= maxLeds) {
-          let newledIndex =  ledIndex - maxLeds;
-          if(newledIndex >= maxLeds)
-            ledIndex = ledIndex - maxLeds*nbstrips;
-          else
-            ledIndex = newledIndex;
-        }
-        
       }
       else { // create new strip with color
         outputDiv.innerHTML += '<div id="' + strip_id + '" class="strip">' + ledDiv + '</div>';
       }
 
+      //console.log('strip:', strip_id, nbstrips, 'color:', color, 'modulo:', ledIndex%maxLeds);
+
       // add led for current iteration for sending request
-      ledsArray[iteration][delay].push({'strip':strip_id, 'led_index':ledIndex, 'color':color});
+      ledsArray[iteration][delay].push({'strip':strip_id, 'led_index':ledIndex%maxLeds, 'color':color});
   });
   interpreter.setProperty(globalObject, 'addLedStrip', wrapper);
 }
@@ -277,7 +270,7 @@ const sendCode = () => {
         }        
 
         for (let iteration in ledsArray) {//requestArray) {
-          //console.log(iteration);
+          console.log(iteration);
           // pause during execution
           let delayNode = ledsArray[iteration];
           for (let delay in delayNode) {
@@ -307,7 +300,7 @@ const sendCode = () => {
                 requestArray.push(request)
               }
               console.log(requestArray);
-              sendRequest(requestArray);  
+              //sendRequest(requestArray);  
             } 
           }
         }
