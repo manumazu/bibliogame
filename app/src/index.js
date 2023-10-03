@@ -20,6 +20,7 @@ Object.assign(javascriptGenerator.forBlock, forBlock);
 const codeDiv = document.getElementById('generatedCode').firstChild;
 const outputDiv = document.getElementById('output');
 const runButton = document.getElementById('runcode');
+const stepButton = document.getElementById('stepcode');
 const sendButton = document.getElementById('sendcode');
 const resetButton = document.getElementById('reset');
 const blocklyDiv = document.getElementById('blocklyDiv');
@@ -32,10 +33,6 @@ Interpreter.nativeGlobal['acorn'] = acorn;
 
 let myInterpreter = null;
 let runnerPid = 0;
-
-//for highlighting blocks
-//javascriptGenerator.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
-//javascriptGenerator.addReservedWords('highlightBlock');
 
 //const baseUrl = 'https://127.0.0.1:5000/api';
 //const baseUrl = 'https://bibliobus.local/api';
@@ -85,11 +82,11 @@ function initApi(interpreter, globalObject) {
   interpreter.setProperty(globalObject, 'changeStripLed', wrapperChangeStripLed);
 
   // Add an API function for highlighting blocks.
-  const wrapper = function(id) {
+  const wrapperHighlight = function(id) {
     id = String(id || '');
     return highlightBlock(id);
   };
-  interpreter.setProperty(globalObject, 'highlightBlock',interpreter.createNativeFunction(wrapper));
+  interpreter.setProperty(globalObject, 'highlightBlock',interpreter.createNativeFunction(wrapperHighlight));
 
   // Add an API for the wait block.  See javascript.js
   initInterpreterWaitForSeconds(interpreter, globalObject);
@@ -105,7 +102,7 @@ function wrapperAddLedStrip(interpreter, globalObject) {
       let ledIndex = 0;
       let nbstrips = document.getElementsByClassName('strip').length;
       // prevent index not to big greater than current led strip (ie : demo module is 32 leds per strip)
-      let maxLeds = 16; // must be dependant with biblioapp values 
+      let maxLeds = 32; // must be dependant with biblioapp values 
 
       const ledDiv = '<div class="ledBlock" style="background-color:' + color + '"></div>';
       //add color to strip div
@@ -190,6 +187,20 @@ function initInterpreterWaitForSecondsForStrip(interpreter, globalObject) {
   interpreter.setProperty(globalObject, 'waitForSecondsForStrip', wrapper);
 }
 
+// This function resets the code and output divs, shows the
+// generated code from the workspace, and evals the code.
+// In a real application, you probably shouldn't use `eval`.
+const showCode = () => {
+  const code = javascriptGenerator.workspaceToCode(ws);
+  codeDiv.innerText = code;
+
+  outputDiv.innerHTML = '';
+  initLedsArray();
+  return code;
+};
+
+
+// for highlighting blocks
 function highlightBlock(id) {
   ws.highlightBlock(id);
 }
@@ -206,33 +217,34 @@ function resetStepUi(clearOutput) {
   myInterpreter = null;
 }
 
-// This function resets the code and output divs, shows the
-// generated code from the workspace, and evals the code.
-// In a real application, you probably shouldn't use `eval`.
-const showCode = () => {
-  const code = javascriptGenerator.workspaceToCode(ws);
-  codeDiv.innerText = code;
 
-  outputDiv.innerHTML = '';
-  initLedsArray();
-  return code;
-};
-
+let explain = false;
+// Each step will run the interpreter until the highlightPause is true.
+let highlightPause = false;
+if(explain) {
+  javascriptGenerator.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
+  javascriptGenerator.addReservedWords('highlightBlock');
+}
 
 const runCode = () => {
+  //
   runButton.addEventListener("click", function() {
     //eval(newCode);
     //console.log(newCode);
     if (!myInterpreter) {
-        //resetStepUi(true);
+        resetStepUi(true);
         // And then show generated code in an alert.
         // In a timeout to allow the outputArea.value to reset first.
+        let hasMore = false;
         setTimeout(function() {
           // Begin execution
           myInterpreter = new Interpreter(newCode, initApi);
           function runner() {
             if (myInterpreter) {
-              const hasMore = myInterpreter.run();              
+              if(explain)
+                hasMore = myInterpreter.step();
+              else 
+                hasMore = myInterpreter.run();           
               if (hasMore) {
                 // Execution is currently blocked by some async call.
                 // Try again later.
@@ -373,7 +385,8 @@ function timer(ms) {
 // Load the initial state from storage and run the code.
 load(ws);
 var newCode = showCode();
-runCode();
+//stepCode();
+runCode(javascriptGenerator);
 sendCode();
 resetRequest();
 
