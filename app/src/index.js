@@ -217,21 +217,52 @@ function resetStepUi(clearOutput) {
   myInterpreter = null;
 }
 
+// manage explain flag for highlighting blocks whit "explain" button 
 
+// use browser history to store explain flag value
+const currentState = history.state;
 let explain = false;
-// Each step will run the interpreter until the highlightPause is true.
-let highlightPause = false;
+if(currentState != null && typeof(currentState.explain)!=='undefined') {
+  explain = currentState.explain;
+  //console.log('explain', explain);
+  runCodeInterpreter();
+}
+
 if(explain) {
   javascriptGenerator.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
   javascriptGenerator.addReservedWords('highlightBlock');
 }
 
+
+const explainCode = () => {
+  // use flag to launch code step by step
+  stepButton.addEventListener("click", function() {
+    // set flag value or run the code step by step
+    if(!explain) {
+      history.pushState({ explain: true }, "", window.location.href);
+      location.reload();
+    } else {
+      runCodeInterpreter();
+    }
+  })
+}
+
 const runCode = () => {
-  //
+  // set flag to launch code directly 
   runButton.addEventListener("click", function() {
-    //eval(newCode);
-    //console.log(newCode);
-    if (!myInterpreter) {
+    // set flag value or run the code
+    if(explain) {
+      history.pushState({ explain: false }, "", window.location.href);
+      location.reload(); 
+    } else {
+      runCodeInterpreter();
+    }  
+  });
+};
+
+// run the code using async Interpreter with step or not
+function runCodeInterpreter() {
+      if (!myInterpreter) {
         resetStepUi(true);
         // And then show generated code in an alert.
         // In a timeout to allow the outputArea.value to reset first.
@@ -260,8 +291,7 @@ const runCode = () => {
           runner();
         }, 1);
     }
-  });
-};
+}
 
 const sendCode = () => {
 
@@ -385,8 +415,8 @@ function timer(ms) {
 // Load the initial state from storage and run the code.
 load(ws);
 var newCode = showCode();
-//stepCode();
-runCode(javascriptGenerator);
+explainCode();
+runCode();
 sendCode();
 resetRequest();
 
