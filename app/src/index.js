@@ -107,9 +107,13 @@ function wrapperAddLedStrip(interpreter, globalObject) {
 
       const ledDiv = '<div class="ledBlock" style="background-color:' + color + '"></div>';
       //add color to strip div
-      if(stripDiv !== null) {
-        stripDiv.innerHTML += ledDiv;
+      if(stripDiv !== null) 
+      {
         ledIndex = stripDiv.getElementsByClassName('ledBlock').length-1;
+        if(ledIndex%maxLeds == maxLeds-1) { // clean strip div when max leds is reached
+          stripDiv.innerHTML = ''; 
+        }    
+        stripDiv.innerHTML += ledDiv;   
       }
       else { // create new strip with color
         outputDiv.innerHTML += '<div id="' + strip_id + '" class="strip">' + ledDiv + '</div>';
