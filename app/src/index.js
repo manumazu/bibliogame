@@ -25,6 +25,7 @@ const sendButton = document.getElementById('sendcode');
 const resetButton = document.getElementById('reset');
 const blocklyDiv = document.getElementById('blocklyDiv');
 const ws = Blockly.inject(blocklyDiv, {toolbox});
+ws.scrollCenter();
 
 
 let acorn = require('acorn');
@@ -222,6 +223,7 @@ function resetStepUi(clearOutput) {
 // use browser history to store explain flag value
 const currentState = history.state;
 let explain = false;
+let runcodeDelay = 10; 
 if(currentState != null && typeof(currentState.explain)!=='undefined') {
   explain = currentState.explain;
   //console.log('explain', explain);
@@ -231,6 +233,7 @@ if(currentState != null && typeof(currentState.explain)!=='undefined') {
 if(explain) {
   javascriptGenerator.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
   javascriptGenerator.addReservedWords('highlightBlock');
+  runcodeDelay = 20;
 }
 
 
@@ -279,7 +282,7 @@ function runCodeInterpreter() {
               if (hasMore) {
                 // Execution is currently blocked by some async call.
                 // Try again later.
-                runnerPid = setTimeout(runner, 10);
+                runnerPid = setTimeout(runner, runcodeDelay);
               }
               else {
                 // Program is complete.
@@ -342,7 +345,7 @@ const sendCode = () => {
                 requestArray.push(request)
               }
               console.log(requestArray);
-              //sendRequest(requestArray);  
+              sendRequest(requestArray);  
             } 
           }
         }

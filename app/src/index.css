@@ -33,6 +33,7 @@ pre, code {
 #generatedCode {
     height: 100%;
     background-color: rgb(247, 240, 228);
+    padding: 10px;
 }
 
 #output {
