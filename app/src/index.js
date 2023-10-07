@@ -113,9 +113,9 @@ function wrapperAddLedStrip(interpreter, globalObject) {
       if(stripDiv !== null) 
       {
         ledIndex = stripDiv.getElementsByClassName('ledBlock').length;
-        if(ledIndex%maxLeds == maxLeds-1) { // clean strip div when max leds is reached
+        if(ledIndex%maxLeds == 0) { // clean strip div when max leds is reached
           stripDiv.innerHTML = '';
-        }    
+        }
         stripDiv.innerHTML += ledDiv;   
       }
       else { // create new strip with color
@@ -253,7 +253,7 @@ if(currentState != null && typeof(currentState.explain)!=='undefined') {
 if(explain) {
   javascriptGenerator.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
   javascriptGenerator.addReservedWords('highlightBlock');
-  runcodeDelay = 10;
+  runcodeDelay = 20;
 }
 
 
@@ -359,16 +359,18 @@ const sendCode = () => {
   });
 };
 
+// used for converting color hexa to rgb format
+const hex2rgb = (hex) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+
+    return r + ',' + g + ',' + b;
+}
+
 // parse leds array before sending requests
 function buildAndSendRequest(requests) {
-    // used for converting color hexa to rgb format
-    const hex2rgb = (hex) => {
-        const r = parseInt(hex.slice(1, 3), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5, 7), 16);
 
-        return r + ',' + g + ',' + b;
-    }
     //console.log(JSON.stringify(requests));
     const requestArray = [];
     for (let node in requests) 
@@ -389,7 +391,7 @@ function buildAndSendRequest(requests) {
       requestArray.push(request)
     }
     console.log(requestArray);
-    //sendRequest(requestArray);
+    sendRequest(requestArray);
 }
 
 //get auth from API
