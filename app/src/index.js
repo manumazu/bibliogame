@@ -21,6 +21,7 @@ const codeDiv = document.getElementById('generatedCode').firstChild;
 const outputDiv = document.getElementById('output');
 const runButton = document.getElementById('runcode');
 const stepButton = document.getElementById('stepcode');
+const stopButton = document.getElementById('stopcode');
 const sendButton = document.getElementById('sendcode');
 const resetButton = document.getElementById('reset');
 const blocklyDiv = document.getElementById('blocklyDiv');
@@ -34,6 +35,7 @@ Interpreter.nativeGlobal['acorn'] = acorn;
 
 let myInterpreter = null;
 let runnerPid = 0;
+let runner;
 
 //const baseUrl = 'https://127.0.0.1:5000/api';
 //const baseUrl = 'https://bibliobus.local/api';
@@ -41,12 +43,12 @@ const baseUrl = 'https://bibliob.us/api';
 //const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
 const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo 
 
-let ledsArray = [];//['iteration_0'];
+let ledsArray = [];// used for recording requests by leds iteration blocks (interpreter run code)
+let stepArray = []; //use for recording single led request (interpreter step code)
 let iteration = 'iteration_0';
 let delay = 0;
 ledsArray[iteration] = [delay];
 ledsArray[iteration][delay]=[];
-
 
 function initLedsArray() {
 
@@ -105,13 +107,14 @@ function wrapperAddLedStrip(interpreter, globalObject) {
       // prevent index not to big greater than current led strip (ie : demo module is 32 leds per strip)
       let maxLeds = 32; // must be dependant with biblioapp values 
 
+      //preview Leds in HTML page
       const ledDiv = '<div class="ledBlock" style="background-color:' + color + '"></div>';
       //add color to strip div
       if(stripDiv !== null) 
       {
-        ledIndex = stripDiv.getElementsByClassName('ledBlock').length-1;
+        ledIndex = stripDiv.getElementsByClassName('ledBlock').length;
         if(ledIndex%maxLeds == maxLeds-1) { // clean strip div when max leds is reached
-          stripDiv.innerHTML = ''; 
+          stripDiv.innerHTML = '';
         }    
         stripDiv.innerHTML += ledDiv;   
       }
@@ -121,8 +124,13 @@ function wrapperAddLedStrip(interpreter, globalObject) {
 
       //console.log('strip:', strip_id, nbstrips, 'color:', color, 'modulo:', ledIndex%maxLeds);
 
-      // add led for current iteration for sending request
-      ledsArray[iteration][delay].push({'strip':strip_id, 'led_index':ledIndex%maxLeds, 'color':color});
+      // store leds positions for sending requests 
+      let ledRequest = {'strip':strip_id, 'led_index':ledIndex%maxLeds, 'color':color};
+      // record led request in global iteration array
+      ledsArray[iteration][delay].push(ledRequest);
+      // record led request for step by step preview
+      stepArray.push(ledRequest); 
+      
   });
   interpreter.setProperty(globalObject, 'addLedStrip', wrapper);
 }
@@ -144,8 +152,8 @@ function initInterpreterWaitForSeconds(interpreter, globalObject) {
         //init leds Array with iteration ID
         iteration = id;
         delay = timeInSeconds * 1000;
-        ledsArray[iteration] = [delay]
-        ledsArray[iteration][delay] = []
+        ledsArray[iteration] = [delay];
+        ledsArray[iteration][delay] = [];
 
         //new timer for output
         let inputTimer = '<input type="hidden" class="waitForSeconds" value="' + delay + '" id="' + id + '">';
@@ -222,6 +230,14 @@ function resetStepUi(clearOutput) {
   myInterpreter = null;
 }
 
+function resetInterpreter() {
+  myInterpreter = null;
+  if (runner) {
+    clearTimeout(runner);
+    runner = null;
+  }
+}
+
 // manage explain flag for highlighting blocks whit "explain" button 
 
 // use browser history to store explain flag value
@@ -237,7 +253,7 @@ if(currentState != null && typeof(currentState.explain)!=='undefined') {
 if(explain) {
   javascriptGenerator.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
   javascriptGenerator.addReservedWords('highlightBlock');
-  runcodeDelay = 20;
+  runcodeDelay = 10;
 }
 
 
@@ -253,6 +269,11 @@ const explainCode = () => {
     }
   })
 }
+
+const stopCode = () => {
+  // use flag to launch code step by step
+  stopButton.addEventListener("click", function() { resetInterpreter(); });
+};
 
 const runCode = () => {
   // set flag to launch code directly 
@@ -275,18 +296,26 @@ function runCodeInterpreter() {
         // In a timeout to allow the outputArea.value to reset first.
         let hasMore = false;
         setTimeout(function() {
-          // Begin execution
+          // Begin execution           
           myInterpreter = new Interpreter(newCode, initApi);
           function runner() {
-            if (myInterpreter) {
-              if(explain)
+            if (myInterpreter) {   
+              if(explain){
+                // Send request to module step by step
+                if(stepArray.length > 0) {
+                    //console.log(stepArray);
+                    buildAndSendRequest(stepArray);
+                }
+                stepArray = [];// clean led request
                 hasMore = myInterpreter.step();
-              else 
-                hasMore = myInterpreter.run();           
+              }
+              else {
+                hasMore = myInterpreter.run();  
+              }
               if (hasMore) {
                 // Execution is currently blocked by some async call.
-                // Try again later.
-                runnerPid = setTimeout(runner, runcodeDelay);
+                // Try again later.              
+                runnerPid = setTimeout(runner, runcodeDelay);  
               }
               else {
                 // Program is complete.
@@ -295,7 +324,7 @@ function runCodeInterpreter() {
               }
             }
           }
-          runner();
+          runner();          
         }, 1);
     }
 }
@@ -303,22 +332,11 @@ function runCodeInterpreter() {
 const sendCode = () => {
 
     sendButton.addEventListener("click", async function() {
-      
 
       // build ouptut array and send request to api with timer
       if (outputDiv.hasChildNodes()) 
       {
-
-        // used for converting color hexa to rgb format
-        const hex2rgb = (hex) => {
-            const r = parseInt(hex.slice(1, 3), 16);
-            const g = parseInt(hex.slice(3, 5), 16);
-            const b = parseInt(hex.slice(5, 7), 16);
-
-            return r + ',' + g + ',' + b;
-        }        
-
-        for (let iteration in ledsArray) {//requestArray) {
+        for (let iteration in ledsArray) {
           console.log(iteration);
           // pause during execution
           let delayNode = ledsArray[iteration];
@@ -330,26 +348,7 @@ const sendCode = () => {
             //send request
             if(Array.isArray(delayNode[delay]) && delayNode[delay].length > 0) {
               //console.log(JSON.stringify(delayNode[delay]));
-              const requestArray = [];
-              for (let node in delayNode[delay]) 
-              {
-                //console.log(delayNode[delay][node]['strip'], delayNode[delay][node]['color']);
-                const row = delayNode[delay][node]['strip'].split('_'); //strip_n
-                const ledIndex = delayNode[delay][node]['led_index'];
-                const color = delayNode[delay][node]['color'];
-
-                const request = {'action':'add',
-                'row':parseInt(row[1]),
-                'led_column':ledIndex, //index
-                'interval':1,
-                'id_tag':null,
-                'color':hex2rgb(color),
-                'id_node':0,
-                'client':'server'};
-                requestArray.push(request)
-              }
-              console.log(requestArray);
-              sendRequest(requestArray);  
+              buildAndSendRequest(delayNode[delay]);
             } 
           }
         }
@@ -359,6 +358,39 @@ const sendCode = () => {
       }
   });
 };
+
+// parse leds array before sending requests
+function buildAndSendRequest(requests) {
+    // used for converting color hexa to rgb format
+    const hex2rgb = (hex) => {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+
+        return r + ',' + g + ',' + b;
+    }
+    //console.log(JSON.stringify(requests));
+    const requestArray = [];
+    for (let node in requests) 
+    {
+      //console.log(delayNode[delay][node]['strip'], delayNode[delay][node]['color']);
+      const row = requests[node]['strip'].split('_'); //strip_n
+      const ledIndex = requests[node]['led_index'];
+      const color = requests[node]['color'];
+
+      const request = {'action':'add',
+      'row':parseInt(row[1]),
+      'led_column':ledIndex, //index
+      'interval':1,
+      'id_tag':null,
+      'color':hex2rgb(color),
+      'id_node':0,
+      'client':'server'};
+      requestArray.push(request)
+    }
+    console.log(requestArray);
+    //sendRequest(requestArray);
+}
 
 //get auth from API
 const refreshToken = async (encodedId) => {
@@ -423,6 +455,7 @@ function timer(ms) {
 load(ws);
 var newCode = showCode();
 explainCode();
+stopCode();
 runCode();
 sendCode();
 resetRequest();
