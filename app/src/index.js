@@ -105,7 +105,7 @@ function wrapperAddLedStrip(interpreter, globalObject) {
       let ledIndex = 0;
       let nbstrips = document.getElementsByClassName('strip').length;
       // prevent index not to big greater than current led strip (ie : demo module is 32 leds per strip)
-      let maxLeds = 32; // must be dependant with biblioapp values 
+      let maxLeds = app_maxLedsStrip; // must be dependant with biblioapp values 
 
       //preview Leds in HTML page
       const ledDiv = '<div class="ledBlock" style="background-color:' + color + '"></div>';
@@ -122,7 +122,7 @@ function wrapperAddLedStrip(interpreter, globalObject) {
         outputDiv.innerHTML += '<div id="' + strip_id + '" class="strip">' + ledDiv + '</div>';
       }
 
-      //console.log('strip:', strip_id, nbstrips, 'color:', color, 'modulo:', ledIndex%maxLeds);
+      //console.log('strip:', strip_id, iteration, 'color:', color, 'modulo:', ledIndex%maxLeds);
 
       // store leds positions for sending requests 
       let ledRequest = {'strip':strip_id, 'led_index':ledIndex%maxLeds, 'color':color};
@@ -187,13 +187,14 @@ function initInterpreterWaitForSecondsForStrip(interpreter, globalObject) {
 
         let stripDiv = document.getElementById(stripId);
         const inputTimer = '<input type="hidden" class="waitForSeconds" value="'+(timeInSeconds * 1000)+'" id="' + id + '">';
+        outputDiv.innerHTML += inputTimer;
         //add timer to strip div
-        if(stripDiv !== null) {
+        /*if(stripDiv !== null) {
           stripDiv.innerHTML += inputTimer;
         }
         else { // create new strip with timer 
           outputDiv.innerHTML += '<div id="'+stripId+'">'+inputTimer+'</div>';
-        }
+        }*/
         // Delay the call to the callback.
         setTimeout(callback, timeInSeconds * 1000);
       });
