@@ -124,13 +124,17 @@ function wrapperAddLedStrip(interpreter, globalObject) {
 
       //console.log('strip:', strip_id, iteration, 'color:', color, 'modulo:', ledIndex%maxLeds);
 
+      // record led request in global iteration array
       // store leds positions for sending requests 
       let ledRequest = {'strip':strip_id, 'led_index':ledIndex%maxLeds, 'color':color};
-      // record led request in global iteration array
-      ledsArray[iteration][delay].push(ledRequest);
-      // record led request for step by step preview
-      stepArray.push(ledRequest); 
+      // store requests by delay and strip (better performance) 
+      if(typeof(ledsArray[iteration][delay][strip_id]) == 'undefined') {
+        ledsArray[iteration][delay][strip_id] = []
+      }
+      ledsArray[iteration][delay][strip_id].push(ledRequest);
       
+      // record led request for step by step preview
+      stepArray.push(ledRequest);
   });
   interpreter.setProperty(globalObject, 'addLedStrip', wrapper);
 }
@@ -347,9 +351,11 @@ const sendCode = () => {
               await timer(delay);
             }
             //send request
-            if(Array.isArray(delayNode[delay]) && delayNode[delay].length > 0) {
-              //console.log(JSON.stringify(delayNode[delay]));
-              buildAndSendRequest(delayNode[delay]);
+            if(Array.isArray(delayNode[delay])) {
+              for (let strip in delayNode[delay]) {
+                //console.log(JSON.stringify(delayNode[delay][strip]));
+                buildAndSendRequest(delayNode[delay][strip]);
+              }
             } 
           }
         }
@@ -391,8 +397,9 @@ function buildAndSendRequest(requests) {
       'client':'server'};
       requestArray.push(request)
     }
+
     console.log(requestArray);
-    sendRequest(requestArray);
+    sendRequest(requestArray);  
 }
 
 //get auth from API
@@ -453,16 +460,6 @@ function timer(ms) {
  return new Promise(res => setTimeout(res, ms));
 }
 
-
-// Load the initial state from storage and run the code.
-load(ws);
-var newCode = showCode();
-explainCode();
-stopCode();
-runCode();
-sendCode();
-resetRequest();
-
 // Every time the workspace changes state, save the changes to storage.
 ws.addChangeListener((e) => {
   // UI events are things like scrolling, zooming, etc.
@@ -483,3 +480,22 @@ ws.addChangeListener((e) => {
   }
   newCode = showCode();
 });
+
+function printTitle() {
+  const pageTitle = document.getElementById('title')
+  pageTitle.innerHTML = `Preview ${app_maxLedsStrip} Leds by Strip`
+}
+
+
+// Load the initial state from storage and run the code.
+load(ws);
+var newCode = showCode();
+const main = () => {
+  printTitle();
+  explainCode();
+  stopCode();
+  runCode();
+  sendCode();
+  resetRequest();
+}
+main()

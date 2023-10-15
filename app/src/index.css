@@ -61,22 +61,18 @@ pre, code {
 }
 
 #output #strip_1 {
-   top: 0px;
-   position: absolute;
+   position: relative;
    overflow: scroll;
-   height: 60px;
 }
 
 #output #strip_2 {
-   top: 50px;
-   position: absolute;
+   position: relative;
    overflow: scroll;
-   height: 60px;
 }
 
 #output #strip_3 {
    top: 100px;
-   position: absolute;
+   position: relative;
    overflow: scroll;
    height: 60px;
 }
