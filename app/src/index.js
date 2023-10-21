@@ -24,6 +24,7 @@ const stepButton = document.getElementById('stepcode');
 const stopButton = document.getElementById('stopcode');
 const sendButton = document.getElementById('sendcode');
 const resetButton = document.getElementById('reset');
+const saveButton = document.getElementById('savecode');
 const blocklyDiv = document.getElementById('blocklyDiv');
 const ws = Blockly.inject(blocklyDiv, {toolbox});
 ws.scrollCenter();
@@ -455,6 +456,29 @@ const resetRequest = () => {
     })
 }
 
+//send save workspace request 
+const saveWorkspace = () => {
+  
+  saveButton.addEventListener("click", function() {
+
+    const state = Blockly.serialization.workspaces.save(ws);
+    console.log(JSON.stringify(state));
+    //Blockly.serialization.workspaces.load(state, ws);
+     
+    /*fetch(baseUrl+'/request?token='+token+'&uuid='+uuid, {
+      method: 'POST',
+      headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(reqArray)
+    })
+   .then(response => response.json())
+   .then(response => console.log(JSON.stringify(response)))*/
+  })
+
+}
+
 
 function timer(ms) {
  return new Promise(res => setTimeout(res, ms));
@@ -482,8 +506,15 @@ ws.addChangeListener((e) => {
 });
 
 function printTitle() {
+
   const pageTitle = document.getElementById('title')
-  pageTitle.innerHTML = `Preview ${app_maxLedsStrip} Leds by Strip`
+  const element = document.createElement("div")
+  element.style.display = 'inline-block'
+  element.appendChild(
+    document.createTextNode(`Preview ${app_maxLedsStrip} Leds by Strip`)
+  )
+  pageTitle.prepend(element)
+  //pageTitle.insertAdjacentHTML('afterbegin', `Preview ${app_maxLedsStrip} Leds by Strip`)
 }
 
 
@@ -497,5 +528,6 @@ const main = () => {
   runCode();
   sendCode();
   resetRequest();
+  saveWorkspace();
 }
 main()

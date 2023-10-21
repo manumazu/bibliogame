@@ -51,6 +51,8 @@ pre, code {
     height: 20vh;
     min-width: 100px;
     background-color: #ddd;
+    margin-top: 25px;
+
 }
 
 .ledBlock {
