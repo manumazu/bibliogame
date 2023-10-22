@@ -39,8 +39,8 @@ let runnerPid = 0;
 let runner;
 
 //const baseUrl = 'https://127.0.0.1:5000/api';
-//const baseUrl = 'https://bibliobus.local/api';
-const baseUrl = 'https://bibliob.us/api';
+const baseUrl = 'https://bibliobus.local/api';
+//const baseUrl = 'https://bibliob.us/api';
 //const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
 const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo 
 
@@ -130,10 +130,9 @@ function wrapperAddLedStrip(interpreter, globalObject) {
       let ledRequest = {'strip':strip_id, 'led_index':ledIndex%maxLeds, 'color':color};
       // store requests by delay and strip (better performance) 
       if(typeof(ledsArray[iteration][delay][strip_id]) == 'undefined') {
-        ledsArray[iteration][delay][strip_id] = []
+          ledsArray[iteration][delay][strip_id] = []
       }
       ledsArray[iteration][delay][strip_id].push(ledRequest);
-      
       // record led request for step by step preview
       stepArray.push(ledRequest);
   });
@@ -158,7 +157,9 @@ function initInterpreterWaitForSeconds(interpreter, globalObject) {
         iteration = id;
         delay = timeInSeconds * 1000;
         ledsArray[iteration] = [delay];
-        ledsArray[iteration][delay] = [];
+        if(typeof(ledsArray[iteration][delay]) == 'undefined') {
+          ledsArray[iteration][delay] = []
+        }         
 
         //new timer for output
         let inputTimer = '<input type="hidden" class="waitForSeconds" value="' + delay + '" id="' + id + '">';
@@ -188,7 +189,9 @@ function initInterpreterWaitForSecondsForStrip(interpreter, globalObject) {
         iteration = id;
         delay = timeInSeconds * 1000;
         ledsArray[iteration] = [delay]
-        ledsArray[iteration][delay] = []
+        if(typeof(ledsArray[iteration][delay]) == 'undefined') {
+          ledsArray[iteration][delay] = []
+        }
 
         let stripDiv = document.getElementById(stripId);
         const inputTimer = '<input type="hidden" class="waitForSeconds" value="'+(timeInSeconds * 1000)+'" id="' + id + '">';
@@ -310,7 +313,8 @@ function runCodeInterpreter() {
                 // Send request to module step by step
                 if(stepArray.length > 0) {
                     //console.log(stepArray);
-                    buildAndSendRequest(stepArray);
+                    const requestArray = buildRequest(stepArray);
+                    sendRequest(requestArray);
                 }
                 stepArray = [];// clean led request
                 hasMore = myInterpreter.step();
@@ -355,9 +359,10 @@ const sendCode = () => {
             if(Array.isArray(delayNode[delay])) {
               for (let strip in delayNode[delay]) {
                 //console.log(JSON.stringify(delayNode[delay][strip]));
-                buildAndSendRequest(delayNode[delay][strip]);
+                const requestArray = buildRequest(delayNode[delay][strip]);
+                sendRequest(requestArray);  
               }
-            } 
+            }
           }
         }
       }
@@ -377,7 +382,7 @@ const hex2rgb = (hex) => {
 }
 
 // parse leds array before sending requests
-function buildAndSendRequest(requests) {
+function buildRequest(requests) {
 
     //console.log(JSON.stringify(requests));
     const requestArray = [];
@@ -400,7 +405,7 @@ function buildAndSendRequest(requests) {
     }
 
     console.log(requestArray);
-    sendRequest(requestArray);  
+    return requestArray;
 }
 
 //get auth from API
@@ -456,22 +461,70 @@ const resetRequest = () => {
     })
 }
 
+// store scenario into an object to be saved as string
+function mapRequests() {
+  const reqArray = {}
+  let delay = 0
+  for (let iteration in ledsArray) {
+      // iteration should be an object
+      reqArray[iteration] = {}
+      // define array for storing elements in delay
+      reqArray[iteration][delay] = []
+      let delayNode = ledsArray[iteration];
+      for (delay in delayNode) {
+        if (Number(delay) > 0) {
+          reqArray[iteration][delay] = []
+        }
+        // add elements
+        if (Array.isArray(delayNode[delay])) {
+          for (let strip in delayNode[delay]) {
+            for (let element in delayNode[delay][strip]) {
+              // use RGB color
+              delayNode[delay][strip][element].color = hex2rgb(delayNode[delay][strip][element].color)
+            }
+            reqArray[iteration][delay].push(delayNode[delay][strip]);
+          }
+        }
+      }
+  }
+  return reqArray
+}
+
 //send save workspace request 
 const saveWorkspace = () => {
   
-  saveButton.addEventListener("click", function() {
-
+  saveButton.addEventListener("click", async function() {
+    // export current workspace as string
     const state = Blockly.serialization.workspaces.save(ws);
-    console.log(JSON.stringify(state));
+    // export played scenatio as string
+    const reqArray = mapRequests();
+    
+    // object verification
+    /*for (let iteration in reqArray) {
+      for (let delay in reqArray[iteration]) {
+        console.log(delay)
+        for (let strip in reqArray[iteration][delay]) {
+          console.log(JSON.stringify(reqArray[iteration][delay][strip]))
+        }
+      }
+    }*/
+
+    const data = [{'title':'test', 
+      'published': 0,
+      'customcode':JSON.stringify(state),
+      'customvars':JSON.stringify(reqArray)
+    }]
     //Blockly.serialization.workspaces.load(state, ws);
+    
+    /*let token = await refreshToken(uuid);
      
-    /*fetch(baseUrl+'/request?token='+token+'&uuid='+uuid, {
+    fetch(baseUrl+'/customcodes?token='+token+'&uuid='+uuid, {
       method: 'POST',
       headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
       },
-      body: JSON.stringify(reqArray)
+      body: JSON.stringify(data)
     })
    .then(response => response.json())
    .then(response => console.log(JSON.stringify(response)))*/
