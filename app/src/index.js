@@ -480,8 +480,9 @@ function mapRequests() {
           for (let strip in delayNode[delay]) {
             for (let element in delayNode[delay][strip]) {
               // use RGB color
-              delayNode[delay][strip][element].color = hex2rgb(delayNode[delay][strip][element].color)
+              //delayNode[delay][strip][element].color = hex2rgb(delayNode[delay][strip][element].color)
             }
+            optimize_blocks(delayNode[delay][strip])
             reqArray[iteration][delay].push(delayNode[delay][strip]);
           }
         }
@@ -489,6 +490,76 @@ function mapRequests() {
   }
   return reqArray
 }
+
+
+// gather contiguous leds together to optimize message
+function optimize_blocks(positions) {
+
+  let cpt = 0  
+  let block = {}
+  let blocks = []
+  let blockelem = []
+  let uniqelem = []
+
+  //console.log(positions)
+  //loop 1 : group nearby positions, and separate isolated postions
+  let interval = 1
+  for (let i in positions) { 
+
+    let pos = positions[i]
+    //console.log(pos)
+    if (cpt == 0)
+      block = {'row':pos.strip, 'start':pos.led_index, 'color':pos.color,}
+    // check if current pos is following the previous pos
+    if (typeof(positions[i-1]) !== 'undefined' && pos.led_index == positions[i-1].led_index + 1 && 
+      pos.color == positions[i-1].color && pos.strip == positions[i-1].strip) {
+
+      let prevItem = positions[i-1]
+      interval = cpt
+      
+      //remove block first element from isolated list
+      let idx = pos.strip+pos.led_index+pos.color
+      if(uniqelem.includes(idx)){
+        uniqelem.remove(idx)
+      }
+
+      // store node ids inside list
+      block.interval = interval
+      if(!blocks.includes(block))
+        blocks.push(block)
+      //console.log(block)
+    }
+    else if (cpt > 0) {
+
+      block = {}
+      blockelem = []
+      blockend = 0
+      //cpt = 0
+      //store isolated elements: node_id for books, position for gaming
+      let idx = pos.strip+pos.led_index+pos.color
+      uniqelem.push(idx)
+    }
+    
+    
+    cpt++
+
+  }
+
+  //second loop
+  for (let i in positions) { 
+
+    let pos = positions[i]
+    let idx = pos.strip+pos.led_index+pos.color
+    for (let j in uniqelem) {
+      if (uniqelem[j] == idx) {
+        blocks.push({'row':pos.strip, 'index':i, 'start':pos.led_index, 'color':pos.color, 'interval':1})
+      }
+    }
+  }
+
+  console.log(JSON.stringify(blocks))
+}
+
 
 //send save workspace request 
 const saveWorkspace = () => {
