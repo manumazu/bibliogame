@@ -372,14 +372,6 @@ const sendCode = () => {
   });
 };
 
-// used for converting color hexa to rgb format
-const hex2rgb = (hex) => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-
-    return r + ',' + g + ',' + b;
-}
 
 // parse leds array before sending requests
 function buildRequest(requests) {
@@ -478,10 +470,6 @@ function mapRequests() {
         // add elements
         if (Array.isArray(delayNode[delay])) {
           for (let strip in delayNode[delay]) {
-            for (let element in delayNode[delay][strip]) {
-              // use RGB color
-              //delayNode[delay][strip][element].color = hex2rgb(delayNode[delay][strip][element].color)
-            }
             let blocks = build_block_position(delayNode[delay][strip])
             reqArray[iteration][delay].push(blocks);
           }
@@ -534,6 +522,15 @@ const saveWorkspace = () => {
 
 }
 
+// used for converting color hexa to rgb format
+const hex2rgb = (hex) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+
+    return r + ',' + g + ',' + b;
+}
+
 // gather contiguous leds together to optimize message
 function build_block_position(positions) {
 
@@ -547,6 +544,7 @@ function build_block_position(positions) {
   for (let i in positions) { 
 
     let pos = positions[i]
+    pos.color = hex2rgb(pos.color)
 
     // define first block
     if (typeof(positions[i-1]) == 'undefined') {
