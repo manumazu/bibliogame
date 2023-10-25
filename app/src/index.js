@@ -482,74 +482,13 @@ function mapRequests() {
               // use RGB color
               //delayNode[delay][strip][element].color = hex2rgb(delayNode[delay][strip][element].color)
             }
-            optimize_blocks(delayNode[delay][strip])
-            reqArray[iteration][delay].push(delayNode[delay][strip]);
+            let blocks = build_block_position(delayNode[delay][strip])
+            reqArray[iteration][delay].push(blocks);
           }
         }
       }
   }
   return reqArray
-}
-
-
-// gather contiguous leds together to optimize message
-function optimize_blocks(positions) {
-
-  let cpt = 0  
-  let block = {}
-  let blocks = []
-
-  //console.log(positions)
-  //loop 1 : group nearby positions, and separate isolated postions
-  for (let i in positions) { 
-
-    let pos = positions[i]
-
-    let idx = pos.strip+'_'+pos.led_index+'_'+pos.color
-    //console.log(pos)
-    //if (cpt == 0) {
-    if (typeof(positions[i-1]) == 'undefined') {
-      block = {'row':pos.strip, 'start':pos.led_index, 'color':pos.color,}
-    }
-    // check if current pos is following the previous pos //
-    else {
-
-      if(pos.led_index == positions[i-1].led_index + 1 && pos.color == positions[i-1].color 
-        && pos.strip == positions[i-1].strip) {
-
-        // store node ids inside list
-        block.interval = cpt+1
-        if(!blocks.includes(block)){
-          //console.log(block)
-          blocks.push(block)
-        }
-
-      }
-      else {
-        cpt = 0
-        block = {'row':pos.strip, 'index':i, 'start':pos.led_index, 'color':pos.color, 'interval':1}
-        blocks.push(block)
-        //console.log('alone1', uniqelem)
-        //console.log(block)
-      }
-      cpt++
-    }
-  }
-
-  //second loop
-  /*for (let i in positions) { 
-
-    let pos = positions[i]
-    let idx = pos.strip+'_'+pos.led_index+'_'+pos.color
-    //console.log('alone2', uniqelem)
-    for (let j in uniqelem) {
-      if (uniqelem[j] == idx) {
-        blocks.push({'row':pos.strip, 'index':i, 'start':pos.led_index, 'color':pos.color, 'interval':1})
-      }
-    }
-  }*/
-
-  console.log(JSON.stringify(blocks))
 }
 
 
@@ -563,14 +502,14 @@ const saveWorkspace = () => {
     const reqArray = mapRequests();
     
     // object verification
-    /*for (let iteration in reqArray) {
+    for (let iteration in reqArray) {
       for (let delay in reqArray[iteration]) {
         console.log(delay)
         for (let strip in reqArray[iteration][delay]) {
           console.log(JSON.stringify(reqArray[iteration][delay][strip]))
         }
       }
-    }*/
+    }
 
     const data = [{'title':'test', 
       'published': 0,
@@ -595,6 +534,51 @@ const saveWorkspace = () => {
 
 }
 
+// gather contiguous leds together to optimize message
+function build_block_position(positions) {
+
+  let cpt = 1  
+  let block = {}
+  let blocks = []
+  let interval = 1
+
+  //console.log(positions)
+  //loop 1 : group nearby positions, and separate isolated postions
+  for (let i in positions) { 
+
+    let pos = positions[i]
+
+    // define first block
+    if (typeof(positions[i-1]) == 'undefined') {
+      block = {'row':pos.strip, 'start':pos.led_index, 'color':pos.color,  'interval':interval}
+    }
+    else {
+      // check if current pos is following the previous pos //
+      if(pos.led_index == positions[i-1].led_index + 1 && pos.color == positions[i-1].color && pos.strip == positions[i-1].strip) {
+
+        interval = cpt+1
+        block.interval = interval 
+
+      }
+      // for single position
+      else {
+        cpt = 0
+        interval = 1        
+        block = {'row':pos.strip, 'index':i, 'start':pos.led_index, 'color':pos.color, 'interval':interval}
+      }
+      cpt++
+    }
+
+    //update block position list
+    if(!blocks.includes(block)){
+      blocks.push(block)
+    }
+
+  }
+
+  //console.log(JSON.stringify(blocks))
+  return blocks
+}
 
 function timer(ms) {
  return new Promise(res => setTimeout(res, ms));
