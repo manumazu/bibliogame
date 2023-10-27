@@ -339,6 +339,26 @@ function runCodeInterpreter() {
     }
 }
 
+// get workspace from biblioapp API and load workspace
+async function getCustomCode() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const codeId = urlParams.get('id_code');
+  if(codeId!==null) {
+    //console.log(codeId)
+    let token = await refreshToken(uuid);
+    const url = `${baseUrl}/customcode/${codeId}?token=${token}&uuid=${uuid}`
+    fetch(url).then(async (response) => {
+        if(response.status == 200) {
+          let state = await response.json();
+          Blockly.serialization.workspaces.load(JSON.parse(state), ws);
+        }
+        else {
+          console.error("Unable to find customcode for id " + codeId)
+        }
+    })
+  }
+}
+
 const sendCode = () => {
 
     sendButton.addEventListener("click", async function() {
@@ -371,7 +391,6 @@ const sendCode = () => {
       }
   });
 };
-
 
 // parse leds array before sending requests
 function buildRequest(requests) {
@@ -486,18 +505,20 @@ const saveWorkspace = () => {
   saveButton.addEventListener("click", async function() {
     // export current workspace as string
     const state = Blockly.serialization.workspaces.save(ws);
+    console.log(state)
+
     // export played scenatio as string
     const reqArray = mapRequests();
     
     // object verification
-    for (let iteration in reqArray) {
+    /*for (let iteration in reqArray) {
       for (let delay in reqArray[iteration]) {
         console.log(delay)
         for (let strip in reqArray[iteration][delay]) {
           console.log(JSON.stringify(reqArray[iteration][delay][strip]))
         }
       }
-    }
+    }*/
 
     const data = {'title':'test blockly', 
       'description': 'test blockly',
@@ -505,7 +526,6 @@ const saveWorkspace = () => {
       'customcode':JSON.stringify(state),
       'customvars':JSON.stringify(reqArray)
     }
-    //Blockly.serialization.workspaces.load(state, ws);
     
     let token = await refreshToken(uuid);
      
@@ -628,5 +648,6 @@ const main = () => {
   sendCode();
   resetRequest();
   saveWorkspace();
+  getCustomCode();
 }
 main()
