@@ -499,14 +499,15 @@ const saveWorkspace = () => {
       }
     }
 
-    const data = [{'title':'test', 
+    const data = {'title':'test blockly', 
+      'description': 'test blockly',
       'published': 0,
       'customcode':JSON.stringify(state),
       'customvars':JSON.stringify(reqArray)
-    }]
+    }
     //Blockly.serialization.workspaces.load(state, ws);
     
-    /*let token = await refreshToken(uuid);
+    let token = await refreshToken(uuid);
      
     fetch(baseUrl+'/customcodes?token='+token+'&uuid='+uuid, {
       method: 'POST',
@@ -517,7 +518,7 @@ const saveWorkspace = () => {
       body: JSON.stringify(data)
     })
    .then(response => response.json())
-   .then(response => console.log(JSON.stringify(response)))*/
+   .then(response => console.log(JSON.stringify(response)))
   })
 
 }
@@ -544,11 +545,11 @@ function build_block_position(positions) {
   for (let i in positions) { 
 
     let pos = positions[i]
-    pos.color = hex2rgb(pos.color)
+    pos.rgb_color = hex2rgb(pos.color)
 
     // define first block
     if (typeof(positions[i-1]) == 'undefined') {
-      block = {'row':pos.strip, 'start':pos.led_index, 'color':pos.color,  'interval':interval}
+      block = {'row':pos.strip, 'start':pos.led_index, 'color':pos.rgb_color,  'interval':interval}
     }
     else {
       // check if current pos is following the previous pos //
@@ -562,7 +563,7 @@ function build_block_position(positions) {
       else {
         cpt = 0
         interval = 1        
-        block = {'row':pos.strip, 'index':i, 'start':pos.led_index, 'color':pos.color, 'interval':interval}
+        block = {'row':pos.strip, 'start':pos.led_index, 'color':pos.rgb_color, 'interval':interval}
       }
       cpt++
     }
