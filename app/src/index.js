@@ -353,6 +353,8 @@ async function getCustomCode() {
           let state = await response.json();
           workspaceTitle = state['title']
           Blockly.serialization.workspaces.load(JSON.parse(state['customcode']), ws);
+          // update page title
+          printTitle(workspaceTitle)
         }
         else {
           console.error("Unable to find customcode for id " + codeId)
@@ -510,24 +512,27 @@ const saveWorkspace = () => {
     //console.log(state)
 
     let title = prompt("Give a short title to your work", workspaceTitle);
-    if(title=='') {
+    if(!title) {
+      return
+    }
+    if(title == '' || title == null) {
       alert("Give a short title to your work");
       return
     }
-    //workspaceTitle = title
+    workspaceTitle = title
 
-    // export played scenatio as string
+    // export played scenario as string
     const reqArray = mapRequests();
     
     // object verification
-    for (let iteration in reqArray) {
+    /*for (let iteration in reqArray) {
       for (let delay in reqArray[iteration]) {
         console.log(delay)
         for (let strip in reqArray[iteration][delay]) {
           console.log(JSON.stringify(reqArray[iteration][delay][strip]))
         }
       }
-    }
+    }*/
 
     const data = {'title':title, 
       'description': 'blockly workspace',
@@ -557,7 +562,15 @@ const saveWorkspace = () => {
         body: JSON.stringify(data)
       })
      .then(response => response.json())
-     .then(response => console.log(JSON.stringify(response)))
+     .then(response =>  {
+        //console.log(JSON.stringify(response))
+        // set new param for url without reload page
+        const url = new URL(window.location);
+        url.searchParams.set("id_code", response.code_id);
+        history.pushState({}, "", url);
+        //update page title
+        printTitle(response.title)
+      })
     }
   })
 
@@ -644,15 +657,24 @@ ws.addChangeListener((e) => {
   newCode = showCode();
 });
 
-function printTitle() {
+async function printTitle(workspaceTitle = null) {
 
-  const pageTitle = document.getElementById('title')
-  const element = document.createElement("div")
-  element.style.display = 'inline-block'
-  element.appendChild(
-    document.createTextNode(`Preview ${app_maxLedsStrip} Leds by Strip`)
-  )
-  pageTitle.prepend(element)
+  const pageTitle = document.getElementById('title-header')
+  const titleDiv = document.getElementById('title')
+  let msg = `${workspaceTitle} : Preview ${app_maxLedsStrip} Leds by Strip`
+  if(workspaceTitle == null) {
+    msg = `New code : Preview ${app_maxLedsStrip} Leds by Strip`
+    const element = document.createElement("div")
+    element.setAttribute('id', 'title')
+    element.style.display = 'inline-block'
+    element.appendChild(
+      document.createTextNode(msg)
+    )
+    pageTitle.prepend(element)
+  }
+  else {
+    titleDiv.innerHTML = msg
+  }
   //pageTitle.insertAdjacentHTML('afterbegin', `Preview ${app_maxLedsStrip} Leds by Strip`)
 }
 
@@ -661,6 +683,7 @@ function printTitle() {
 load(ws);
 var newCode = showCode();
 const main = () => {
+  getCustomCode();
   printTitle();
   explainCode();
   stopCode();
@@ -668,6 +691,5 @@ const main = () => {
   sendCode();
   resetRequest();
   saveWorkspace();
-  getCustomCode();
 }
 main()
