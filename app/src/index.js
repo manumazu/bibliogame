@@ -42,8 +42,9 @@ let runner;
 const baseUrl = 'https://bibliobus.local/api';
 //const baseUrl = 'https://bibliob.us/api';
 //const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
-const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo 
+const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo
 
+let workspaceTitle = '';
 let ledsArray = [];// used for recording requests by leds iteration blocks (interpreter run code)
 let stepArray = []; //use for recording single led request (interpreter step code)
 let iteration = 'iteration_0';
@@ -350,7 +351,8 @@ async function getCustomCode() {
     fetch(url).then(async (response) => {
         if(response.status == 200) {
           let state = await response.json();
-          Blockly.serialization.workspaces.load(JSON.parse(state), ws);
+          workspaceTitle = state['title']
+          Blockly.serialization.workspaces.load(JSON.parse(state['customcode']), ws);
         }
         else {
           console.error("Unable to find customcode for id " + codeId)
@@ -505,40 +507,58 @@ const saveWorkspace = () => {
   saveButton.addEventListener("click", async function() {
     // export current workspace as string
     const state = Blockly.serialization.workspaces.save(ws);
-    console.log(state)
+    //console.log(state)
+
+    let title = prompt("Give a short title to your work", workspaceTitle);
+    if(title=='') {
+      alert("Give a short title to your work");
+      return
+    }
+    //workspaceTitle = title
 
     // export played scenatio as string
     const reqArray = mapRequests();
     
     // object verification
-    /*for (let iteration in reqArray) {
+    for (let iteration in reqArray) {
       for (let delay in reqArray[iteration]) {
         console.log(delay)
         for (let strip in reqArray[iteration][delay]) {
           console.log(JSON.stringify(reqArray[iteration][delay][strip]))
         }
       }
-    }*/
+    }
 
-    const data = {'title':'test blockly', 
-      'description': 'test blockly',
+    const data = {'title':title, 
+      'description': 'blockly workspace',
       'published': 0,
       'customcode':JSON.stringify(state),
       'customvars':JSON.stringify(reqArray)
     }
     
     let token = await refreshToken(uuid);
-     
-    fetch(baseUrl+'/customcodes?token='+token+'&uuid='+uuid, {
-      method: 'POST',
-      headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    })
-   .then(response => response.json())
-   .then(response => console.log(JSON.stringify(response)))
+    const urlParams = new URLSearchParams(window.location.search);
+    const codeId = urlParams.get('id_code');
+
+    let url = ''
+    if(codeId!==null) {
+      url = `${baseUrl}/customcode/${codeId}?token=${token}&uuid=${uuid}`
+    } 
+    else {
+      url = `${baseUrl}/customcodes?token=${token}&uuid=${uuid}`
+    }
+    if(url) {
+      fetch(url, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+     .then(response => response.json())
+     .then(response => console.log(JSON.stringify(response)))
+    }
   })
 
 }
