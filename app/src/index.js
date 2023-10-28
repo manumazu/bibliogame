@@ -357,6 +357,9 @@ async function getCustomCode() {
           printTitle(workspaceTitle)
         }
         else {
+          // force redirect to base page url when connection error
+          const urlOrigin = location.protocol + '//' + location.host + location.pathname
+          history.pushState({}, "", urlOrigin);
           console.error("Unable to find customcode for id " + codeId)
         }
     })
@@ -525,14 +528,14 @@ const saveWorkspace = () => {
     const reqArray = mapRequests();
     
     // object verification
-    /*for (let iteration in reqArray) {
+    for (let iteration in reqArray) {
       for (let delay in reqArray[iteration]) {
         console.log(delay)
         for (let strip in reqArray[iteration][delay]) {
           console.log(JSON.stringify(reqArray[iteration][delay][strip]))
         }
       }
-    }*/
+    }
 
     const data = {'title':title, 
       'description': 'blockly workspace',
