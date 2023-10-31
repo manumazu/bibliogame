@@ -11,6 +11,7 @@ import {javascriptGenerator} from 'blockly/javascript';
 import {save, load} from './serialization';
 import {toolbox} from './toolbox';
 import './index.css';
+const bibliobus = require('./bibliobus');
 
 // Register the blocks and generator with Blockly
 Blockly.common.defineBlocks(blocks);
@@ -22,7 +23,6 @@ const outputDiv = document.getElementById('output');
 const runButton = document.getElementById('runcode');
 const stepButton = document.getElementById('stepcode');
 const stopButton = document.getElementById('stopcode');
-const sendButton = document.getElementById('sendcode');
 const resetButton = document.getElementById('reset');
 const saveButton = document.getElementById('savecode');
 const blocklyDiv = document.getElementById('blocklyDiv');
@@ -37,12 +37,6 @@ Interpreter.nativeGlobal['acorn'] = acorn;
 let myInterpreter = null;
 let runnerPid = 0;
 let runner;
-
-//const baseUrl = 'https://127.0.0.1:5000/api';
-const baseUrl = 'https://bibliobus.local/api';
-//const baseUrl = 'https://bibliob.us/api';
-//const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
-const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo
 
 let workspaceTitle = '';
 let ledsArray = [];// used for recording requests by leds iteration blocks (interpreter run code)
@@ -248,8 +242,6 @@ function resetInterpreter() {
   }
 }
 
-// manage explain flag for highlighting blocks whit "explain" button 
-
 // use browser history to store explain flag value
 const currentState = history.state;
 let explain = false;
@@ -260,12 +252,12 @@ if(currentState != null && typeof(currentState.explain)!=='undefined') {
   runCodeInterpreter();
 }
 
+// manage explain flag for highlighting blocks whit "explain" button 
 if(explain) {
   javascriptGenerator.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
   javascriptGenerator.addReservedWords('highlightBlock');
   runcodeDelay = 20;
 }
-
 
 const explainCode = () => {
   // use flag to launch code step by step
@@ -283,7 +275,7 @@ const explainCode = () => {
 const stopCode = () => {
   // use flag to launch code step by step
   stopButton.addEventListener("click", function() { resetInterpreter(); });
-};
+}
 
 const runCode = () => {
   // set flag to launch code directly 
@@ -296,347 +288,87 @@ const runCode = () => {
       runCodeInterpreter();
     }  
   });
-};
+}
+
+const resetRequest = () => {
+  // interrupt code execution and send reset message
+  resetButton.addEventListener("click", function() {
+      resetInterpreter();
+      initLedsArray();
+      outputDiv.innerHTML = '';
+      // send reset message to API
+      bibliobus.resetRequest();
+  })
+}
+
+//send save workspace and transform leds requests as array
+const saveWorkspace = async() => {
+  
+  saveButton.addEventListener("click", async function() {
+    const state = Blockly.serialization.workspaces.save(ws);
+    if(!outputDiv.hasChildNodes()) {
+        alert("Press RUN button before saving something")
+        return
+    }
+    // map leds array, update workspace and page title
+    const response = await bibliobus.saveWorkspace(state, ledsArray, workspaceTitle);
+    workspaceTitle = response[0]
+    
+    // object verification
+    const mapRequests = response[1]
+    //console.log(mapRequests)
+    for (let iteration in mapRequests) {
+      for (let delay in mapRequests[iteration]) {
+        console.log(delay)
+        for (let strip in mapRequests[iteration][delay]) {
+          console.log(JSON.stringify(mapRequests[iteration][delay][strip]))
+        }
+      }
+    }
+
+  })
+}
 
 // run the code using async Interpreter with step or not
 function runCodeInterpreter() {
-      if (!myInterpreter) {
-        resetStepUi(true);
-        // And then show generated code in an alert.
-        // In a timeout to allow the outputArea.value to reset first.
-        let hasMore = false;
-        setTimeout(function() {
-          // Begin execution           
-          myInterpreter = new Interpreter(newCode, initApi);
-          function runner() {
-            if (myInterpreter) {   
-              if(explain){
-                // Send request to module step by step
-                if(stepArray.length > 0) {
-                    //console.log(stepArray);
-                    const requestArray = buildRequest(stepArray);
-                    sendRequest(requestArray);
-                }
-                stepArray = [];// clean led request
-                hasMore = myInterpreter.step();
+    if (!myInterpreter) {
+      resetStepUi(true);
+      // And then show generated code in an alert.
+      // In a timeout to allow the outputArea.value to reset first.
+      let hasMore = false;
+      setTimeout(function() {
+        // Begin execution           
+        myInterpreter = new Interpreter(newCode, initApi);
+        function runner() {
+          if (myInterpreter) {   
+            if(explain){
+              // Send request to module step by step
+              if(stepArray.length > 0) {
+                  //console.log(stepArray);
+                  const requestArray = bibliobus.buildRequest(stepArray);
+                  bibliobus.sendRequest(requestArray);
               }
-              else {
-                hasMore = myInterpreter.run();  
-              }
-              if (hasMore) {
-                // Execution is currently blocked by some async call.
-                // Try again later.              
-                runnerPid = setTimeout(runner, runcodeDelay);  
-              }
-              else {
-                // Program is complete.
-                //outputDiv.innerHTML += '\n\n<< Program complete >>';
-                resetStepUi(false);
-              }
+              stepArray = [];// clean led request
+              hasMore = myInterpreter.step();
             }
-          }
-          runner();          
-        }, 1);
-    }
-}
-
-// get workspace from biblioapp API and load workspace
-async function getCustomCode() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const codeId = urlParams.get('id_code');
-  if(codeId!==null) {
-    //console.log(codeId)
-    let token = await refreshToken(uuid);
-    const url = `${baseUrl}/customcode/${codeId}?token=${token}&uuid=${uuid}`
-    fetch(url).then(async (response) => {
-        if(response.status == 200) {
-          let state = await response.json();
-          workspaceTitle = state['title']
-          Blockly.serialization.workspaces.load(JSON.parse(state['customcode']), ws);
-          // update page title
-          printTitle(workspaceTitle)
-        }
-        else {
-          // force redirect to base page url when connection error
-          const urlOrigin = location.protocol + '//' + location.host + location.pathname
-          history.pushState({}, "", urlOrigin);
-          console.error("Unable to find customcode for id " + codeId)
-        }
-    })
-  }
-}
-
-const sendCode = () => {
-
-    sendButton.addEventListener("click", async function() {
-
-      // build ouptut array and send request to api with timer
-      if (outputDiv.hasChildNodes()) 
-      {
-        for (let iteration in ledsArray) {
-          console.log(iteration);
-          // pause during execution
-          let delayNode = ledsArray[iteration];
-          for (let delay in delayNode) {
-            if (Number(delay) > 0) {
-              console.log(delay);
-              await timer(delay);
+            else {
+              hasMore = myInterpreter.run();  
             }
-            //send request
-            if(Array.isArray(delayNode[delay])) {
-              for (let strip in delayNode[delay]) {
-                //console.log(JSON.stringify(delayNode[delay][strip]));
-                const requestArray = buildRequest(delayNode[delay][strip]);
-                sendRequest(requestArray);  
-              }
+            if (hasMore) {
+              // Execution is currently blocked by some async call.
+              // Try again later.              
+              runnerPid = setTimeout(runner, runcodeDelay);  
+            }
+            else {
+              // Program is complete.
+              //outputDiv.innerHTML += '\n\n<< Program complete >>';
+              resetStepUi(false);
             }
           }
         }
-      }
-      else {
-        alert("Press RUN button before saving something");
-      }
-  });
-};
-
-// parse leds array before sending requests
-function buildRequest(requests) {
-
-    //console.log(JSON.stringify(requests));
-    const requestArray = [];
-    for (let node in requests) 
-    {
-      //console.log(delayNode[delay][node]['strip'], delayNode[delay][node]['color']);
-      const row = requests[node]['strip'].split('_'); //strip_n
-      const ledIndex = requests[node]['led_index'];
-      const color = requests[node]['color'];
-
-      const request = {'action':'add',
-      'row':parseInt(row[1]),
-      'led_column':ledIndex, //index
-      'interval':1,
-      'id_tag':null,
-      'color':hex2rgb(color),
-      'id_node':0,
-      'client':'server'};
-      requestArray.push(request)
-    }
-
-    console.log(requestArray);
-    return requestArray;
-}
-
-//get auth from API
-const refreshToken = async (encodedId) => {
-    const url = baseUrl + '/module/' + encodedId + '/';
-    let response = await fetch(url);
-    let res = await response.json();
-    //console.log(res['token']);
-    return res['token'];
-};
-
-//send ligthing request to server, relayed through mobile App
-const sendRequest = async(reqArray) => {
-  let token = await refreshToken(uuid);
-    //console.log(token)
-     
-    fetch(baseUrl+'/request?token='+token+'&uuid='+uuid, {
-      method: 'POST',
-      headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(reqArray)
-    })
-   .then(response => response.json())
-   .then(response => console.log(JSON.stringify(response)))
-};
-
-//send reset request to server to delete lighting requests, relayed through mobile App
-const resetAllRequest = async() => {
-    let token = await refreshToken(uuid);
-    const resetRequest = [{'action':'reset'}]
-    fetch(baseUrl+'/reset-game?token='+token+'&uuid='+uuid, {
-      method: 'POST',
-      headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(resetRequest)
-    })
-   .then(response => response.json())
-   .then(response => console.log(JSON.stringify(response)))
-
-   outputDiv.innerHTML = '';
-   initLedsArray();
-};
-
-const resetRequest = () => {
-
-    // build ouptut array and send request to api
-    resetButton.addEventListener("click", function() {
-      resetAllRequest();
-    })
-}
-
-// store scenario into an object to be saved as string
-function mapRequests() {
-  const reqArray = {}
-  let delay = 0
-  for (let iteration in ledsArray) {
-      // iteration should be an object
-      reqArray[iteration] = {}
-      // define array for storing elements in delay
-      reqArray[iteration][delay] = []
-      let delayNode = ledsArray[iteration];
-      for (delay in delayNode) {
-        if (Number(delay) > 0) {
-          reqArray[iteration][delay] = []
-        }
-        // add elements
-        if (Array.isArray(delayNode[delay])) {
-          for (let strip in delayNode[delay]) {
-            let blocks = build_block_position(delayNode[delay][strip])
-            reqArray[iteration][delay].push(blocks);
-          }
-        }
-      }
+        runner();          
+      }, 1);
   }
-  return reqArray
-}
-
-
-//send save workspace request 
-const saveWorkspace = () => {
-  
-  saveButton.addEventListener("click", async function() {
-    // export current workspace as string
-    const state = Blockly.serialization.workspaces.save(ws);
-    //console.log(state)
-
-    let title = prompt("Give a short title to your work", workspaceTitle);
-    if(!title) {
-      return
-    }
-    if(title == '' || title == null) {
-      alert("Give a short title to your work");
-      return
-    }
-    workspaceTitle = title
-
-    // export played scenario as string
-    const reqArray = mapRequests();
-    
-    // object verification
-    for (let iteration in reqArray) {
-      for (let delay in reqArray[iteration]) {
-        console.log(delay)
-        for (let strip in reqArray[iteration][delay]) {
-          console.log(JSON.stringify(reqArray[iteration][delay][strip]))
-        }
-      }
-    }
-
-    const data = {'title':title, 
-      'description': 'blockly workspace',
-      'published': 0,
-      'customcode':JSON.stringify(state),
-      'customvars':JSON.stringify(reqArray)
-    }
-    
-    let token = await refreshToken(uuid);
-    const urlParams = new URLSearchParams(window.location.search);
-    const codeId = urlParams.get('id_code');
-
-    let url = ''
-    if(codeId!==null) {
-      url = `${baseUrl}/customcode/${codeId}?token=${token}&uuid=${uuid}`
-    } 
-    else {
-      url = `${baseUrl}/customcodes?token=${token}&uuid=${uuid}`
-    }
-    if(url) {
-      fetch(url, {
-        method: 'POST',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-      })
-     .then(response => response.json())
-     .then(response =>  {
-        //console.log(JSON.stringify(response))
-        // set new param for url without reload page
-        const url = new URL(window.location);
-        url.searchParams.set("id_code", response.code_id);
-        history.pushState({}, "", url);
-        //update page title
-        printTitle(response.title)
-      })
-    }
-  })
-
-}
-
-// used for converting color hexa to rgb format
-const hex2rgb = (hex) => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-
-    return r + ',' + g + ',' + b;
-}
-
-// gather contiguous leds together to optimize message
-function build_block_position(positions) {
-
-  let cpt = 1  
-  let block = {}
-  let blocks = []
-  let interval = 1
-
-  //console.log(positions)
-  //loop 1 : group nearby positions, and separate isolated postions
-  for (let i in positions) { 
-
-    let pos = positions[i]
-    pos.rgb_color = hex2rgb(pos.color)
-
-    // define first block
-    if (typeof(positions[i-1]) == 'undefined') {
-      block = {'row':pos.strip, 'start':pos.led_index, 'color':pos.rgb_color,  'interval':interval}
-    }
-    else {
-      // check if current pos is following the previous pos //
-      if(pos.led_index == positions[i-1].led_index + 1 && pos.color == positions[i-1].color && pos.strip == positions[i-1].strip) {
-
-        interval = cpt+1
-        block.interval = interval 
-
-      }
-      // for single position
-      else {
-        cpt = 0
-        interval = 1        
-        block = {'row':pos.strip, 'start':pos.led_index, 'color':pos.rgb_color, 'interval':interval}
-      }
-      cpt++
-    }
-
-    //update block position list
-    if(!blocks.includes(block)){
-      blocks.push(block)
-    }
-
-  }
-
-  //console.log(JSON.stringify(blocks))
-  return blocks
-}
-
-function timer(ms) {
- return new Promise(res => setTimeout(res, ms));
 }
 
 // Every time the workspace changes state, save the changes to storage.
@@ -660,39 +392,27 @@ ws.addChangeListener((e) => {
   newCode = showCode();
 });
 
-async function printTitle(workspaceTitle = null) {
-
-  const pageTitle = document.getElementById('title-header')
-  const titleDiv = document.getElementById('title')
-  let msg = `${workspaceTitle} : Preview ${app_maxLedsStrip} Leds by Strip`
-  if(workspaceTitle == null) {
-    msg = `New code : Preview ${app_maxLedsStrip} Leds by Strip`
-    const element = document.createElement("div")
-    element.setAttribute('id', 'title')
-    element.style.display = 'inline-block'
-    element.appendChild(
-      document.createTextNode(msg)
-    )
-    pageTitle.prepend(element)
-  }
-  else {
-    titleDiv.innerHTML = msg
-  }
-  //pageTitle.insertAdjacentHTML('afterbegin', `Preview ${app_maxLedsStrip} Leds by Strip`)
-}
-
-
 // Load the initial state from storage and run the code.
 load(ws);
 var newCode = showCode();
-const main = () => {
-  getCustomCode();
-  printTitle();
+
+const main = async () => {
+  
+  // retrieve last state of blockly workspace for api
+  let state = await bibliobus.getCustomCode()
+  if(!state) {
+    bibliobus.printPageTitle();
+  }
+  else {
+    workspaceTitle = state['title']
+    Blockly.serialization.workspaces.load(JSON.parse(state['customcode']), ws);
+    // update page title
+    await bibliobus.printPageTitle(workspaceTitle)
+  }
   explainCode();
   stopCode();
   runCode();
-  sendCode();
+  saveWorkspace();  
   resetRequest();
-  saveWorkspace();
 }
 main()
