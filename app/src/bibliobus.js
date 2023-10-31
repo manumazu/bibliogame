@@ -1,8 +1,5 @@
-//const baseUrl = 'https://127.0.0.1:5000/api';
-//const baseUrl = 'https://bibliobus.local/api';
-const baseUrl = 'https://bibliob.us/api';
-//const uuid = 'YmlidXMtMDAwMy0wMzA0Nw=='; //module "bearstech"
-const uuid = 'YmlidXMtMDAwMi0wMzA5Mg=='; //module de démo
+const baseUrl = app_baseUrl
+const uuid = app_uuid
 
 module.exports = {
 
@@ -17,7 +14,7 @@ module.exports = {
        const url = `${baseUrl}/customcode/${codeId}?token=${token}&uuid=${uuid}`
        return fetch(url).then(async (response) => {
            if(response.status == 200) {
-             return await response.json();
+             return await response.json()
            }
            else {
              // force redirect to base page url when connection error
@@ -58,46 +55,46 @@ module.exports = {
    // export current workspace as string
    saveWorkspace: async function(state, ledsArray, workspaceTitle) {
        
-       let title = prompt("Give a short title to your work", workspaceTitle);
-       if(!title) {
-         return
-       }
-       if(title == '' || title == null) {
+      let title = prompt("Give a short title to your work", workspaceTitle);
+      if(title == '') {
          alert("Give a short title to your work");
-         return
-       }
-       workspaceTitle = title
+         return false
+      }
+      if(!title || title == null) {
+         return false
+      }
+      workspaceTitle = title
 
-       // export played scenario as string
-       const reqArray = this.mapRequests(ledsArray);
+      // export played scenario as string
+      const reqArray = this.mapRequests(ledsArray);
 
-       const data = {'title':title, 
+      const data = {'title':title, 
          'description': 'blockly workspace',
          'published': 0,
          'customcode':JSON.stringify(state),
          'customvars':JSON.stringify(reqArray)
-       }
+      }
        
-       let token = await this.refreshToken(uuid);
-       const urlParams = new URLSearchParams(window.location.search);
-       const codeId = urlParams.get('id_code');
+      let token = await this.refreshToken(uuid);
+      const urlParams = new URLSearchParams(window.location.search);
+      const codeId = urlParams.get('id_code');
 
-       let url = ''
-       if(codeId!==null) {
+      let url = ''
+      if(codeId!==null) {
          url = `${baseUrl}/customcode/${codeId}?token=${token}&uuid=${uuid}`
-       } 
-       else {
+      } 
+      else {
          url = `${baseUrl}/customcodes?token=${token}&uuid=${uuid}`
-       }
+      }
 
-       fetch(url, {
+      fetch(url, {
          method: 'POST',
          headers: {
              'Accept': 'application/json',
              'Content-Type': 'application/json'
          },
          body: JSON.stringify(data)
-       })
+      })
       .then(response => response.json())
       .then(response =>  {
          //console.log(JSON.stringify(response))
@@ -107,7 +104,7 @@ module.exports = {
          history.pushState({}, "", url);
          //update page title
          this.printPageTitle(response.title)
-       })
+      })
 
       return [workspaceTitle, reqArray]
    },

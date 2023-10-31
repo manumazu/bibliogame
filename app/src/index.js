@@ -57,6 +57,7 @@ function initLedsArray() {
 
 }
 
+// load wrappers for Interpretor
 function initApi(interpreter, globalObject) {
 
   // Add an API function for the alert() block, generated for "text_print" blocks.
@@ -204,17 +205,47 @@ function initInterpreterWaitForSecondsForStrip(interpreter, globalObject) {
   interpreter.setProperty(globalObject, 'waitForSecondsForStrip', wrapper);
 }
 
-// This function resets the code and output divs, shows the
-// generated code from the workspace, and evals the code.
-// In a real application, you probably shouldn't use `eval`.
-const showCode = () => {
-  const code = javascriptGenerator.workspaceToCode(ws);
-  codeDiv.innerText = code;
-
-  outputDiv.innerHTML = '';
-  initLedsArray();
-  return code;
-};
+// run the code using async Interpreter with step or not
+function runCodeInterpreter() {
+    if (!myInterpreter) {
+      resetStepUi(true);
+      // And then show generated code in an alert.
+      // In a timeout to allow the outputArea.value to reset first.
+      let hasMore = false;
+      setTimeout(function() {
+        // Begin execution           
+        myInterpreter = new Interpreter(newCode, initApi);
+        function runner() {
+          if (myInterpreter) {   
+            if(explain){
+              // Send request to module step by step
+              if(stepArray.length > 0) {
+                  //console.log(stepArray);
+                  const requestArray = bibliobus.buildRequest(stepArray);
+                  bibliobus.sendRequest(requestArray);
+              }
+              stepArray = [];// clean led request
+              hasMore = myInterpreter.step();
+            }
+            else {
+              hasMore = myInterpreter.run();  
+            }
+            if (hasMore) {
+              // Execution is currently blocked by some async call.
+              // Try again later.              
+              runnerPid = setTimeout(runner, runcodeDelay);  
+            }
+            else {
+              // Program is complete.
+              //outputDiv.innerHTML += '\n\n<< Program complete >>';
+              resetStepUi(false);
+            }
+          }
+        }
+        runner();          
+      }, 1);
+  }
+}
 
 
 // for highlighting blocks
@@ -258,6 +289,19 @@ if(explain) {
   javascriptGenerator.addReservedWords('highlightBlock');
   runcodeDelay = 20;
 }
+
+
+// This function resets the code and output divs, shows the
+// generated code from the workspace, and evals the code.
+// In a real application, you probably shouldn't use `eval`.
+const showCode = () => {
+  const code = javascriptGenerator.workspaceToCode(ws);
+  codeDiv.innerText = code;
+
+  outputDiv.innerHTML = '';
+  initLedsArray();
+  return code;
+};
 
 const explainCode = () => {
   // use flag to launch code step by step
@@ -312,16 +356,18 @@ const saveWorkspace = async() => {
     }
     // map leds array, update workspace and page title
     const response = await bibliobus.saveWorkspace(state, ledsArray, workspaceTitle);
-    workspaceTitle = response[0]
-    
-    // object verification
-    const mapRequests = response[1]
-    //console.log(mapRequests)
-    for (let iteration in mapRequests) {
-      for (let delay in mapRequests[iteration]) {
-        console.log(delay)
-        for (let strip in mapRequests[iteration][delay]) {
-          console.log(JSON.stringify(mapRequests[iteration][delay][strip]))
+    if(response) {
+      workspaceTitle = response[0]
+      
+      // object verification
+      const mapRequests = response[1]
+      //console.log(mapRequests)
+      for (let iteration in mapRequests) {
+        for (let delay in mapRequests[iteration]) {
+          console.log(delay)
+          for (let strip in mapRequests[iteration][delay]) {
+            console.log(JSON.stringify(mapRequests[iteration][delay][strip]))
+          }
         }
       }
     }
@@ -329,47 +375,6 @@ const saveWorkspace = async() => {
   })
 }
 
-// run the code using async Interpreter with step or not
-function runCodeInterpreter() {
-    if (!myInterpreter) {
-      resetStepUi(true);
-      // And then show generated code in an alert.
-      // In a timeout to allow the outputArea.value to reset first.
-      let hasMore = false;
-      setTimeout(function() {
-        // Begin execution           
-        myInterpreter = new Interpreter(newCode, initApi);
-        function runner() {
-          if (myInterpreter) {   
-            if(explain){
-              // Send request to module step by step
-              if(stepArray.length > 0) {
-                  //console.log(stepArray);
-                  const requestArray = bibliobus.buildRequest(stepArray);
-                  bibliobus.sendRequest(requestArray);
-              }
-              stepArray = [];// clean led request
-              hasMore = myInterpreter.step();
-            }
-            else {
-              hasMore = myInterpreter.run();  
-            }
-            if (hasMore) {
-              // Execution is currently blocked by some async call.
-              // Try again later.              
-              runnerPid = setTimeout(runner, runcodeDelay);  
-            }
-            else {
-              // Program is complete.
-              //outputDiv.innerHTML += '\n\n<< Program complete >>';
-              resetStepUi(false);
-            }
-          }
-        }
-        runner();          
-      }, 1);
-  }
-}
 
 // Every time the workspace changes state, save the changes to storage.
 ws.addChangeListener((e) => {

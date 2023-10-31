@@ -34,15 +34,15 @@ pre, code {
 #outputPane {
     display: flex;
     flex-direction: column;
-    width: 400px;
     flex: 0 0 400px;
     overflow: auto;
-    padding: 1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
     background-color: #ddd;
 }
 
 #generatedCode {
-    height: 60%;
+    height: 55%;
     background-color: rgb(247, 240, 228);
     padding: 10px;
 }
@@ -52,12 +52,12 @@ pre, code {
     min-width: 100px;
     background-color: #ddd;
     margin-top: 25px;
-
+    border: dashed red;
 }
 
 .ledBlock {
-    padding: 20px;
-    margin: 5px;
+    padding: 18px;
+    margin: 4px;
     width: 10px;
     display: inline-block;
 }
@@ -73,8 +73,6 @@ pre, code {
 }
 
 #output #strip_3 {
-   top: 100px;
    position: relative;
    overflow: scroll;
-   height: 60px;
 }
