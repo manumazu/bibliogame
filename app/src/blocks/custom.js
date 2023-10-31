@@ -64,17 +64,8 @@ const addLedStrip = {
       'check': 'Colour',
     },
     {
-      //'type': 'field_variable',
-      //'name': 'STRIP_NAME',
-      'type': 'field_dropdown',
-      'name': 'STRIP_NAME',
-      'options': [
-        [ 'strip1', 'strip_1' ],
-        [ 'strip2', 'strip_2' ],
-        [ 'strip3', 'strip_3' ]
-      ]
-      //'variable': 'strip number'
-      //'variable': '%{BKY_VARIABLES_DEFAULT_NAME}',  
+      'type': 'input_value',
+      'name': 'TEXT',
     },
   ],
   'previousStatement': null,
@@ -95,8 +86,43 @@ const nextStripLed = {
   'helpUrl': '',
 };
 
+const waitSeconds = {
+  'type': 'wait_seconds',
+  'message0': ' wait %1 seconds',
+  'args0': [{
+    'type': 'field_number',
+    'name': 'SECONDS',
+    'min': 0,
+    'max': 600,
+    'value': 1,
+  }],
+  'previousStatement': null,
+  'nextStatement': null,
+  'colour': '%{BKY_LOOPS_HUE}',
+};
+
+const waitSecondsForStrip = {
+  'type': 'wait_seconds_strip',
+  'message0': ' wait %1 seconds for strip %2',
+  'args0': [
+    {
+      'type': 'field_number',
+      'name': 'SECONDS',
+      'min': 0,
+      'max': 600,
+      'value': 1,
+    },
+    {
+      'type': 'input_value',
+      'name': 'TEXT',
+    }],
+  'previousStatement': null,
+  'nextStatement': null,
+  'colour': '%{BKY_LOOPS_HUE}',
+};
+
 
 // Create the block definitions for the JSON-only blocks.
 // This does not register their definitions with Blockly.
 // This file has no side effects!
-export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([addText, addLed, addLedStrip, nextStripLed]);
+export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray([addText, addLed, addLedStrip, nextStripLed, waitSeconds, waitSecondsForStrip]);

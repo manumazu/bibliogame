@@ -33,75 +33,39 @@ forBlock['add_text'] = function (block, generator) {
   return code;
 };
 
-forBlock['add_led'] = function (block, generator) {
-  const color =
-    generator.valueToCode(block, 'COLOR', Order.ATOMIC) || "'#ffffff'";
 
-  const addLed = generator.provideFunction_(
-      'addLed',
-      `function ${generator.FUNCTION_NAME_PLACEHOLDER_}(color) {
+// generate custom functions used for Interpretor
 
-  // Add color div to the output area.
-  const outputDiv = document.getElementById('output');
-  const textEl = document.createElement('div');
-  textEl.style.backgroundColor = color;
-  textEl.style.padding = '20px';
-  textEl.style.margin = '5px';
-  textEl.style.width = '10px';
-  textEl.style.display = 'inline-block';
-  outputDiv.appendChild(textEl);
-}`
-  );
-  // Generate the function call for this block.
-  const code = `${addLed}(${color});\n`;
+forBlock['add_led'] = function(block, generator) {
+  const color = generator.valueToCode(block, 'COLOR', Order.ATOMIC) || "'#ffffff'";
+  const code = 'addLed(' + color + ');\n';
   return code;
 };
 
-forBlock['add_led_strip'] = function (block, generator) {
-  const strip_num = "'"+block.inputList[1].fieldRow[1].selectedOption[1]+"'"; 
-  //generator.valueToCode(block, 'STRIP_NAME', Order.MEMBER);
-  console.log('input:',block.inputList[1].fieldRow[1].selectedOption[0]); 
-  //const strip_num = block.getFieldValue('STRIP_NAME');
-  const color =
-    generator.valueToCode(block, 'COLOR', Order.MEMBER) || "'#ffffff'";
-  console.log('color',color);
-
-  const addLedStrip = generator.provideFunction_(
-      'addLedStrip',
-      `function ${generator.FUNCTION_NAME_PLACEHOLDER_}(color, strip_num) {
-  // Add color div to the output area.
-  const outputDiv = document.getElementById('output');
-  const textEl = document.createElement('div');
-  textEl.style.backgroundColor = color;
-  textEl.style.padding = '20px';
-  textEl.style.margin = '5px';
-  textEl.style.width = '10px';
-  textEl.style.display = 'inline-block';
-  textEl.setAttribute('id', strip_num);
-  outputDiv.appendChild(textEl);
-}`
-  );
-  // Generate the function call for this block.
-  const code = `${addLedStrip}(${color},${strip_num});\n`;
+forBlock['add_led_strip'] = function(block, generator) {
+  //const strip_num = block.getFieldValue('TEXT'); 
+  //const strip_num = "'"+block.inputList[1].fieldRow[1].selectedOption[1]+"'";
+  const strip_num = (generator.valueToCode(block, 'TEXT', Order.MEMBER));
+  const color = generator.valueToCode(block, 'COLOR', Order.MEMBER) || "'#ffffff'";
+  const code = 'addLedStrip(' + color + ', ' + strip_num + ');\n';
   return code;
 };
 
-
-forBlock['change_strip'] = function (block, generator) {
-
-  const nextStripLed = generator.provideFunction_(
-      'nextStripLed',
-      `function ${generator.FUNCTION_NAME_PLACEHOLDER_}() {
-
-  // Add color div to the output area.
-  const outputDiv = document.getElementById('output');
-  const textEl = document.createElement('div');
-  textEl.style.display = 'block';
-  textEl.setAttribute('id', 'changeStrip');
-  outputDiv.appendChild(textEl);
-}`
-  );
-  // Generate the function call for this block.
-  const code = `${nextStripLed}();\n`;
+forBlock['change_strip'] = function(block, generator) {
+  const code = 'changeStripLed();\n';
   return code;
 };
+
+forBlock['wait_seconds'] = function(block, generator) {
+  const seconds = Number(block.getFieldValue('SECONDS'));
+  const code = 'waitForSeconds(' + seconds + ');\n';
+  return code;
+};
+
+forBlock['wait_seconds_strip'] = function(block, generator) {
+  const seconds = Number(block.getFieldValue('SECONDS'));
+  const strip_num = (generator.valueToCode(block, 'TEXT', Order.MEMBER));
+  const code = 'waitForSecondsForStrip(' + seconds + ', ' + strip_num + ');\n';
+  return code;
+};
+

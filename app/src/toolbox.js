@@ -111,6 +111,14 @@ export const toolbox = {
           'kind': 'block',
           'type': 'controls_flow_statements',
         },
+        {
+          'kind': 'block',
+          'type': 'wait_seconds_strip',
+        }, 
+        {
+          'kind': 'block',
+          'type': 'wait_seconds',
+        },    
       ],
     },
     {
@@ -663,12 +671,12 @@ export const toolbox = {
                   'COLOUR': '#aa00cc',
                 },
               },
-              'LIST': {
-                'block': {
-                  'type': 'variables_get',
-                },
+            },
+            'TEXT': {
+              'shadow': {
+                'type': 'text'
               },
-            },    
+            }                
           },
         },        
         {
