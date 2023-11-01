@@ -25,6 +25,7 @@ const stepButton = document.getElementById('stepcode');
 const stopButton = document.getElementById('stopcode');
 const resetButton = document.getElementById('reset');
 const saveButton = document.getElementById('savecode');
+const publishButton = document.getElementById('publishcode');
 const blocklyDiv = document.getElementById('blocklyDiv');
 const ws = Blockly.inject(blocklyDiv, {toolbox});
 ws.scrollCenter();
@@ -45,6 +46,7 @@ let iteration = 'iteration_0';
 let delay = 0;
 ledsArray[iteration] = [delay];
 ledsArray[iteration][delay]=[];
+let isPublished = false;
 
 function initLedsArray() {
 
@@ -347,7 +349,6 @@ const resetRequest = () => {
 
 //send save workspace and transform leds requests as array
 const saveWorkspace = async() => {
-  
   saveButton.addEventListener("click", async function() {
     const state = Blockly.serialization.workspaces.save(ws);
     if(!outputDiv.hasChildNodes()) {
@@ -372,6 +373,28 @@ const saveWorkspace = async() => {
       }
     }
 
+  })
+}
+
+const publishCode = () => {
+  publishButton.addEventListener("click", function() {
+    if(publishButton.classList.contains('publish')){
+      isPublished = true
+      console.log('publish', isPublished)
+      publishButton.classList.remove('publish')
+      publishButton.classList.add('draft')
+      publishButton.innerText = 'Set as Draft'
+    }
+
+    if(publishButton.classList.contains('draft')){
+      isPublished = false
+      console.log('publish', isPublished)
+      publishButton.classList.remove('draft')
+      publishButton.classList.add('publish')
+      publishButton.innerText = 'Publish'      
+    }
+    //const response = bibliobus.publishCode()
+    
   })
 }
 
@@ -419,5 +442,6 @@ const main = async () => {
   runCode();
   saveWorkspace();  
   resetRequest();
+  publishCode();
 }
 main()

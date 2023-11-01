@@ -115,6 +115,23 @@ module.exports = {
    },
 
    //send ligthing request to server, relayed through mobile App
+   publishCode: async function(publish) {
+     let token = await this.refreshToken(uuid);
+       //console.log(token)
+        
+       fetch(baseUrl+'/customcodepublish?token='+token+'&uuid='+uuid, {
+         method: 'POST',
+         headers: {
+             'Accept': 'application/json',
+             'Content-Type': 'application/json'
+         },
+         body: JSON.stringify({'publish':publish})
+       })
+      .then(response => response.json())
+      .then(response => console.log(JSON.stringify(response)))
+   },
+
+   //send ligthing request to server, relayed through mobile App
    sendRequest: async function(reqArray) {
      let token = await this.refreshToken(uuid);
        //console.log(token)
@@ -133,12 +150,12 @@ module.exports = {
 
    // add title in page header
    printPageTitle: async function(workspaceTitle = null) {
-     const pageTitle = document.getElementById('title-header')
+     const titleDiv = document.getElementById('title')
      let msg = `${workspaceTitle} : Preview ${app_maxLedsStrip} Leds by Strip`
      if(workspaceTitle == null) {
-       msg = `New code : Preview ${app_maxLedsStrip} Leds by Strip`
+         msg = `New code : Preview ${app_maxLedsStrip} Leds by Strip`
      }
-     pageTitle.innerHTML = '<div id="title">' + msg + '</div>'
+     titleDiv.innerHTML = msg
    },
 
    // parse leds array before sending requests

@@ -47,6 +47,14 @@ pre, code {
     padding: 10px;
 }
 
+.publish {
+    background-color: blue;
+}
+
+.draft {
+    background-color: grey;
+}
+
 #output {
     height: 17vh;
     min-width: 100px;
