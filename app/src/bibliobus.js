@@ -1,12 +1,11 @@
 const baseUrl = app_baseUrl
 const uuid = app_uuid
+let codeId = app_code_id
 
 module.exports = {
 
    // get workspace from biblioapp API and load workspace
    getCustomCode: async function() {
-     const urlParams = new URLSearchParams(window.location.search);
-     const codeId = urlParams.get('id_code');
      let state = ''
      if(codeId!==null) {
        //console.log(codeId)
@@ -18,9 +17,10 @@ module.exports = {
            }
            else {
              // force redirect to base page url when connection error
-             const urlOrigin = location.protocol + '//' + location.host + location.pathname
-             history.pushState({}, "", urlOrigin);
+             //const urlOrigin = location.protocol + '//' + location.host + location.pathname
+             //history.pushState({}, "", urlOrigin);
              console.error("Unable to find customcode for id " + codeId)
+             codeId = null
            }
        })
      }
@@ -77,7 +77,7 @@ module.exports = {
        
       let token = await this.refreshToken(uuid);
       const urlParams = new URLSearchParams(window.location.search);
-      const codeId = urlParams.get('id_code');
+      //const codeId = urlParams.get('id_code');
 
       let url = ''
       if(codeId!==null) {
@@ -99,9 +99,14 @@ module.exports = {
       .then(response =>  {
          //console.log(JSON.stringify(response))
          // set new param for url without reload page
-         const url = new URL(window.location);
-         url.searchParams.set("id_code", response.code_id);
-         history.pushState({}, "", url);
+         //const url = new URL(window.location);
+         //url.searchParams.set("id_code", response.code_id);
+         //history.pushState({}, "", url);
+         
+         //update app codeId
+         app_code_id = response.code_id
+         codeId = app_code_id
+         
          //update page title
          this.printPageTitle(response.title)
       })

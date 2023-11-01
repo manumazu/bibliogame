@@ -48,11 +48,12 @@ pre, code {
 }
 
 #output {
-    height: 20vh;
+    height: 17vh;
     min-width: 100px;
     background-color: #ddd;
     margin-top: 25px;
     border: dashed red;
+    overflow: scroll;
 }
 
 .ledBlock {
