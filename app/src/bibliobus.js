@@ -116,10 +116,16 @@ module.exports = {
 
    //send ligthing request to server, relayed through mobile App
    publishCode: async function(publish) {
-     let token = await this.refreshToken(uuid);
+      
+      if(codeId===null) {
+         console.log('Error : Missing codeId')
+         return false
+      }
+
+      let token = await this.refreshToken(uuid);
        //console.log(token)
         
-       fetch(baseUrl+'/customcodepublish?token='+token+'&uuid='+uuid, {
+      fetch(baseUrl+`${baseUrl}/customcodepublish/${codeId}?token=${token}&uuid=${uuid}`, {
          method: 'POST',
          headers: {
              'Accept': 'application/json',

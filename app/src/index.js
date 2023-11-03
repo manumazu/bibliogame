@@ -378,23 +378,31 @@ const saveWorkspace = async() => {
 
 const publishCode = () => {
   publishButton.addEventListener("click", function() {
+    
+    // show button status depending publish status
     if(publishButton.classList.contains('publish')){
       isPublished = true
-      console.log('publish', isPublished)
+    }
+
+    if(publishButton.classList.contains('draft')){
+      isPublished = false 
+    }
+
+    const response = await bibliobus.publishCode(isPublished);
+    console.log('publish', isPublished, response)
+    // coade is published : set button to draft
+    if(response['published'] === true) {
       publishButton.classList.remove('publish')
       publishButton.classList.add('draft')
       publishButton.innerText = 'Set as Draft'
     }
-
-    if(publishButton.classList.contains('draft')){
-      isPublished = false
-      console.log('publish', isPublished)
+    // coade is draft : set button to publish
+    else if (response['published'] === false) {
       publishButton.classList.remove('draft')
       publishButton.classList.add('publish')
-      publishButton.innerText = 'Publish'      
+      publishButton.innerText = 'Publish'
     }
-    //const response = bibliobus.publishCode()
-    
+
   })
 }
 
