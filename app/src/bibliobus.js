@@ -123,9 +123,7 @@ module.exports = {
       }
 
       let token = await this.refreshToken(uuid);
-       //console.log(token)
-        
-      fetch(baseUrl+`${baseUrl}/customcodepublish/${codeId}?token=${token}&uuid=${uuid}`, {
+      return fetch(`${baseUrl}/customcodepublish/${codeId}?token=${token}&uuid=${uuid}`, {
          method: 'POST',
          headers: {
              'Accept': 'application/json',
@@ -134,7 +132,10 @@ module.exports = {
          body: JSON.stringify({'publish':publish})
        })
       .then(response => response.json())
-      .then(response => console.log(JSON.stringify(response)))
+      .then(response => {
+         //console.log(JSON.stringify(response))
+         return response
+      })
    },
 
    //send ligthing request to server, relayed through mobile App
@@ -154,14 +155,26 @@ module.exports = {
       .then(response => console.log(JSON.stringify(response)))
    },
 
-   // add title in page header
-   printPageTitle: async function(workspaceTitle = null) {
-     const titleDiv = document.getElementById('title')
-     let msg = `${workspaceTitle} : Preview ${app_maxLedsStrip} Leds by Strip`
-     if(workspaceTitle == null) {
+   // add title in page header and set button status
+   printPageTitle: function(workspaceTitle = null, isPublished) {
+      const titleDiv = document.getElementById('title')
+      const publishButton = document.getElementById('publishcode')
+      let msg = `${workspaceTitle} : Preview ${app_maxLedsStrip} Leds by Strip`
+      if(workspaceTitle == null) {
          msg = `New code : Preview ${app_maxLedsStrip} Leds by Strip`
-     }
-     titleDiv.innerHTML = msg
+      }
+      titleDiv.innerHTML = msg
+      if(isPublished == 1) {
+         publishButton.classList.remove('publish')
+         publishButton.classList.add('draft')
+         publishButton.innerText = 'Set as Draft'
+      }
+      // code is draft : set button to publish
+      else if (isPublished == 0) {
+         publishButton.classList.remove('draft')
+         publishButton.classList.add('publish')
+         publishButton.innerText = 'Publish'
+      }
    },
 
    // parse leds array before sending requests

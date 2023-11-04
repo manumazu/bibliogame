@@ -376,8 +376,8 @@ const saveWorkspace = async() => {
   })
 }
 
-const publishCode = () => {
-  publishButton.addEventListener("click", function() {
+const publishCode = async() => {
+  publishButton.addEventListener("click", async function() {
     
     // show button status depending publish status
     if(publishButton.classList.contains('publish')){
@@ -389,7 +389,7 @@ const publishCode = () => {
     }
 
     const response = await bibliobus.publishCode(isPublished);
-    console.log('publish', isPublished, response)
+    //console.log('publish', isPublished, response)
     // coade is published : set button to draft
     if(response['published'] === true) {
       publishButton.classList.remove('publish')
@@ -441,9 +441,10 @@ const main = async () => {
   }
   else {
     workspaceTitle = state['title']
+    isPublished = state['published']
     Blockly.serialization.workspaces.load(JSON.parse(state['customcode']), ws);
     // update page title
-    await bibliobus.printPageTitle(workspaceTitle)
+    bibliobus.printPageTitle(workspaceTitle, isPublished)
   }
   explainCode();
   stopCode();
