@@ -98,11 +98,12 @@ module.exports = {
       .then(response => response.json())
       .then(response =>  {
          //console.log(JSON.stringify(response))
-         // add new param for url without reload page
-         let url = new URL(window.location);
-         url += response.code_id;
-         history.pushState({}, "", url);
-         
+         // add new param for url without reload page for new code id
+         if(codeId == null) { 
+            let url = new URL(window.location);
+            url += response.code_id;
+            history.pushState({}, "", url);
+         }
          //update app codeId in template
          app_code_id = response.code_id
          codeId = app_code_id
