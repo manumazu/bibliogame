@@ -53,8 +53,9 @@ module.exports = {
    },
 
    // export current workspace as string
-   saveWorkspace: async function(state, ledsArray, workspaceTitle) {
-       
+   saveWorkspace: async function(state, ledsArray, workspaceTitle, isPublished) {
+      
+      //console.log('isPublished',isPublished)
       let title = prompt("Give a short title to your work", workspaceTitle);
       if(title == '') {
          alert("Give a short title to your work");
@@ -70,7 +71,7 @@ module.exports = {
 
       const data = {'title':title, 
          'description': 'blockly workspace',
-         'published': 0,
+         'published': isPublished,
          'customcode':JSON.stringify(state),
          'customvars':JSON.stringify(reqArray)
       }

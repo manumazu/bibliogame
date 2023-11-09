@@ -356,7 +356,7 @@ const saveWorkspace = async() => {
         return
     }
     // map leds array, update workspace and page title
-    const response = await bibliobus.saveWorkspace(state, ledsArray, workspaceTitle);
+    const response = await bibliobus.saveWorkspace(state, ledsArray, workspaceTitle, isPublished);
     if(response) {
       workspaceTitle = response[0]
       
